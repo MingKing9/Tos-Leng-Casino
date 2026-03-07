@@ -36,21 +36,21 @@
         .player-badge.is-ready { background: #27ae60; border-color: #fff; box-shadow: 0 0 12px #2ecc71; }
         
         .card-row { 
-    display: grid;
-    grid-template-columns: repeat(3, 42px);
-    grid-template-rows: repeat(2, 60px);
-    justify-content: center;
-    gap: 4px;
-    margin-top: 5px;
-}
-.card-img { 
-    width: 42px; 
-    height: 60px; 
-    border-radius: 4px; 
-    transition: transform 0.2s; 
-    background: white; 
-    box-shadow: 2px 2px 8px rgba(0,0,0,0.5); 
-}
+            display: grid;
+            grid-template-columns: repeat(3, 42px);
+            grid-template-rows: repeat(2, 60px);
+            justify-content: center;
+            gap: 4px;
+            margin-top: 5px;
+        }
+        .card-img { 
+            width: 42px; 
+            height: 60px; 
+            border-radius: 4px; 
+            transition: transform 0.2s; 
+            background: white; 
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.5); 
+        }
         .card-img.active { transform: translateY(-15px) scale(1.1); border: 2.5px solid var(--gold); z-index: 100; box-shadow: 0 0 15px var(--gold); }
 
         /* Classic Bottom Controls */
@@ -61,7 +61,7 @@
         }
         .action-group { display: flex; flex-direction: column; gap: 6px; }
 
-        button { padding: 14px 0; border: none; border-radius: 12px; font-weight: 800; font-size: 11px; color: white; text-transform: uppercase; transition: opacity 0.2s; }
+        button { padding: 14px 0; border: none; border-radius: 12px; font-weight: 800; font-size: 11px; color: white; text-transform: uppercase; transition: opacity 0.2s; cursor: pointer; }
         button:active { opacity: 0.7; transform: scale(0.98); }
         
         .btn-gold { background: var(--gold); color: #000; }
@@ -108,20 +108,9 @@
     <div class="controls-bar">
         <div class="action-group">
             <button class="btn-gold" onclick="toggleChat()" style="position:relative;">
-    CHAT
-    <span id="chatBadge" style="
-        display:none;
-        position:absolute;
-        top:-6px;
-        right:-6px;
-        background:red;
-        color:white;
-        font-size:10px;
-        font-weight:700;
-        padding:2px 6px;
-        border-radius:10px;
-    ">0</span>
-</button>
+                CHAT
+                <span id="chatBadge" style="display:none; position:absolute; top:-6px; right:-6px; background:red; color:white; font-size:10px; font-weight:700; padding:2px 6px; border-radius:10px;">0</span>
+            </button>
         </div>
         
         <div class="action-group">
@@ -138,7 +127,7 @@
 </div>
 
 <div id="chat-box">
-    <div style="padding: 12px; text-align: center; color: var(--gold); font-weight: bold;" onclick="toggleChat()">CLOSE CHAT</div>
+    <div style="padding: 12px; text-align: center; color: var(--gold); font-weight: bold; cursor:pointer;" onclick="toggleChat()">CLOSE CHAT</div>
     <div id="chat-messages"></div>
     <div style="padding:10px; display:flex; gap:8px; background:#000; padding-bottom: calc(var(--safe-bottom) + 10px);">
         <input id="chatInput" style="flex:1; padding:12px; border-radius:20px; border:none; background:#222; color:white;" placeholder="Message..." onkeypress="if(event.key==='Enter') sendChat()">
@@ -148,7 +137,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, update, onValue, get, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, set, update, onValue, get, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBjsVUxlNjGUnYioHOlKmk1wEMoVTSVxLw",
@@ -159,8 +148,9 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-   let room, player, pass, selectedIdx = null;
-let unreadCount = 0;
+    let room, player, pass;
+    let selectedIdx = null;
+    let unreadCount = 0;
 
     const getCardImg = (val) => {
         if (!val) return "https://deckofcardsapi.com/static/img/back.png";
@@ -171,31 +161,35 @@ let unreadCount = 0;
     };
 
     window.join = function() {
-    room = document.getElementById("roomInput").value.trim().toLowerCase();
-    player = document.getElementById("nameInput").value.trim();
-    pass = document.getElementById("passInput").value.trim();
-    if(!room || !player) return;
-
-    get(ref(db, `rooms/${room}/config`)).then(snap => {
-        const config = snap.val();
-
-        if(config && config.pass !== pass) {
-            alert("Wrong Password!");
+        room = document.getElementById("roomInput").value.trim().toLowerCase();
+        player = document.getElementById("nameInput").value.trim();
+        pass = document.getElementById("passInput").value.trim();
+        
+        if(!room || !player) {
+            alert("Please enter Room Name and Your Name");
             return;
         }
 
-        if(!config) {
-            set(ref(db, `rooms/${room}/config`), {pass: pass});
-        }
+        get(ref(db, `rooms/${room}/config`)).then(snap => {
+            const config = snap.val();
+            if(config && config.pass !== pass) {
+                alert("Wrong Password!");
+                return;
+            }
+            if(!config) {
+                set(ref(db, `rooms/${room}/config`), {pass: pass});
+            }
 
-        document.getElementById("login-screen").style.display = "none";
-        document.getElementById("display-room").innerText = "TABLE: " + room.toUpperCase();
-        document.getElementById("display-name").innerText = player.toUpperCase();
+            document.getElementById("login-screen").style.display = "none";
+            document.getElementById("display-room").innerText = "TABLE: " + room.toUpperCase();
+            document.getElementById("display-name").innerText = player.toUpperCase();
 
-        listen();
-        listenChat(); // IMPORTANT
-    });
-};
+            listen();
+            listenChat();
+        }).catch(err => {
+            alert("Connection Error: " + err.message);
+        });
+    };
 
     function listen() {
         onValue(ref(db, `rooms/${room}`), snap => {
@@ -205,7 +199,7 @@ let unreadCount = 0;
             if(!data) return;
 
             const players = data.players ? Object.keys(data.players) : [];
-            const myCards = data.players ? data.players[player] : null;
+            const myCards = (data.players && data.players[player]) ? data.players[player] : null;
             const amIReady = (data.readyStatus && data.readyStatus[player]);
 
             document.getElementById("dealBtn").style.display = myCards ? "none" : "block";
@@ -226,102 +220,85 @@ let unreadCount = 0;
                 
                 const cardsDiv = document.createElement("div");
                 cardsDiv.className = "card-row";
-                data.players[p].forEach((c, idx) => {
-                    const img = document.createElement("img");
-                    img.className = "card-img";
-                    if(selectedIdx === idx && p === player) img.classList.add("active");
-                    img.src = (p === player || c.faceUp) ? getCardImg(c.val) : getCardImg(null);
-                    if(p === player && !c.faceUp && !amIReady) {
-                        img.onclick = () => {
-                            if(selectedIdx === null) selectedIdx = idx;
-                            else { swapCards(selectedIdx, idx); selectedIdx = null; }
-                        };
-                    }
-                    cardsDiv.appendChild(img);
-                });
+                
+                if (data.players[p]) {
+                    data.players[p].forEach((c, idx) => {
+                        const img = document.createElement("img");
+                        img.className = "card-img";
+                        if(selectedIdx === idx && p === player) img.classList.add("active");
+                        img.src = (p === player || c.faceUp) ? getCardImg(c.val) : getCardImg(null);
+                        
+                        if(p === player && !c.faceUp && !amIReady) {
+                            img.onclick = () => {
+                                if(selectedIdx === null) {
+                                    selectedIdx = idx;
+                                    listen(); // Refresh UI to show active card
+                                } else { 
+                                    swapCards(selectedIdx, idx); 
+                                    selectedIdx = null; 
+                                }
+                            };
+                        }
+                        cardsDiv.appendChild(img);
+                    });
+                }
                 spot.appendChild(badge); spot.appendChild(cardsDiv); table.appendChild(spot);
             });
         });
     }
 
-window.toggleChat = () => {
+    window.toggleChat = () => {
+        const chat = document.getElementById("chat-box");
+        chat.classList.toggle("open");
+        if(chat.classList.contains("open")){
+            unreadCount = 0;
+            const badge = document.getElementById("chatBadge");
+            badge.style.display = "none";
+        }
+    };
 
-    const chat = document.getElementById("chat-box");
+    window.sendChat = function() {
+        const input = document.getElementById("chatInput");
+        const text = input.value.trim();
+        if(!text) return;
+        push(ref(db, `rooms/${room}/chats`), {
+            user: player,
+            text: text,
+            time: Date.now()
+        });
+        input.value = "";
+    };
 
-    chat.classList.toggle("open");
+    function listenChat() {
+        onValue(ref(db, `rooms/${room}/chats`), snap => {
+            const list = document.getElementById("chat-messages");
+            const chatBox = document.getElementById("chat-box");
+            const wasOpen = chatBox.classList.contains("open");
+            list.innerHTML = "";
+            const data = snap.val();
+            if(!data) return;
 
-    if(chat.classList.contains("open")){
+            Object.values(data).forEach(m => {
+                const div = document.createElement("div");
+                div.className = "msg" + (m.user === player ? " msg-own" : "");
+                div.innerText = `${m.user}: ${m.text}`;
+                list.appendChild(div);
+                if(!wasOpen && m.user !== player){
+                    unreadCount++;
+                }
+            });
 
-        unreadCount = 0;
-
-        const badge = document.getElementById("chatBadge");
-
-        badge.style.display = "none";
-
+            if(unreadCount > 0){
+                const badge = document.getElementById("chatBadge");
+                badge.style.display = "block";
+                badge.innerText = unreadCount;
+            }
+            list.scrollTop = list.scrollHeight;
+        });
     }
 
-};
-window.sendChat = function() {
-
-    const input = document.getElementById("chatInput");
-
-    const text = input.value.trim();
-
-    if(!text) return;
-
-    push(ref(db, `rooms/${room}/chats`), {
-        user: player,
-        text: text,
-        time: Date.now()
-    });
-
-    input.value = "";
-
-};
-
- function listenChat() {
-
-    onValue(ref(db, `rooms/${room}/chats`), snap => {
-
-        const list = document.getElementById("chat-messages");
-        const chatBox = document.getElementById("chat-box");
-
-        const wasOpen = chatBox.classList.contains("open");
-
-        list.innerHTML = "";
-
-        const data = snap.val();
-        if(!data) return;
-
-        Object.values(data).forEach(m => {
-
-            const div = document.createElement("div");
-
-            div.className = "msg" + (m.user === player ? " msg-own" : "");
-
-            div.innerText = `${m.user}: ${m.text}`;
-
-            list.appendChild(div);
-
-            if(!wasOpen && m.user !== player){
-                unreadCount++;
-            }
-
-        });
-
-        if(unreadCount > 0){
-            const badge = document.getElementById("chatBadge");
-            badge.style.display = "block";
-            badge.innerText = unreadCount;
-        }
-
-        list.scrollTop = list.scrollHeight;
-
-    });
-
-}
-
     window.toggleReady = (s) => set(ref(db, `rooms/${room}/readyStatus/${player}`), s);
+
     window.deal = () => {
         const s=["♠","♥","♦","♣"], v=["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
         let d=[]; s.forEach(si=>v.forEach(vi=>d.push(vi+si)));
@@ -329,19 +306,34 @@ window.sendChat = function() {
         set(ref(db, `rooms/${room}/players/${player}`), cards);
         set(ref(db, `rooms/${room}/readyStatus/${player}`), false);
     };
+
     window.reveal = () => {
         get(ref(db, `rooms/${room}/players`)).then(snap => {
             let data = snap.val(); if(!data) return;
             let updates = {};
-            for(let p in data) data[p].forEach((c,i)=> updates[`rooms/${room}/players/${p}/${i}/faceUp`]=true);
+            for(let p in data) {
+                data[p].forEach((c,i)=> {
+                    updates[`rooms/${room}/players/${p}/${i}/faceUp`] = true;
+                });
+            }
             update(ref(db), updates);
         });
     };
-    window.resetGame = () => { if(confirm("New Round?")) { set(ref(db, `rooms/${room}/players`), null); set(ref(db, `rooms/${room}/readyStatus`), null); set(ref(db, `rooms/${room}/chats`), null); } };
+
+    window.resetGame = () => { 
+        if(confirm("New Round?")) { 
+            set(ref(db, `rooms/${room}/players`), null); 
+            set(ref(db, `rooms/${room}/readyStatus`), null); 
+            set(ref(db, `rooms/${room}/chats`), null); 
+        } 
+    };
+
     function swapCards(a, b) {
         const pRef = ref(db, `rooms/${room}/players/${player}`);
         get(pRef).then(snap => {
-            let c = snap.val(); [c[a], c[b]] = [c[b], c[a]];
+            let c = snap.val(); 
+            if(!c) return;
+            [c[a], c[b]] = [c[b], c[a]];
             set(pRef, c);
         });
     }
