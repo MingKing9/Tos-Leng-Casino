@@ -55,12 +55,6 @@
 <body>
 
 <div id="login-screen">
-    <h1 style="color:var(--gold)">TOS LENG</h1>
-    <select id="langSelect" class="login-input" style="background:var(--gold); color:black; font-weight:bold;">
-        <option value="kh">ភាសាខ្មែរ</option>
-        <option value="en">ENGLISH</option>
-        <option value="cn">中文</option>
-<div id="login-screen">
     <h1 style="color:var(--gold); letter-spacing:3px;">TOS LENG</h1>
     <select id="langSelect" class="login-input" style="background:var(--gold); color:black; font-weight:bold;">
         <option value="kh">ភាសាខ្មែរ</option>
@@ -77,7 +71,7 @@
 <div id="transfer-modal" class="modal" style="display:none;">
     <h2 style="color:var(--gold)" id="txt-trans-title">TRANSFER</h2>
     <select id="transfer-to" class="login-input"></select>
-    <input id="transfer-amount" class="login-input" type="number" id="inp-amount-placeholder">
+    <input id="transfer-amount" class="login-input" type="number" placeholder=""> 
     <button onclick="confirmTransfer()" id="btn-send-money" class="btn-green" style="width:85%; margin-bottom:10px;">SEND</button>
     <button onclick="document.getElementById('transfer-modal').style.display='none'" id="btn-cancel-money" class="btn-red" style="width:85%;">CANCEL</button>
 </div>
