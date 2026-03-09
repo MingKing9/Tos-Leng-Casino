@@ -1,69 +1,58 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="km">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Tos Leng - Classic Pro</title>
+    <title>Tos Leng - Global Pro</title>
     <style>
         :root { --gold: #d4af37; --felt: #1a5e37; --wood: #3d2b1f; --safe-bottom: env(safe-area-inset-bottom); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: -apple-system, sans-serif; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Khmer OS Battambang', 'Segoe UI', sans-serif; }
 
-        /* Elegant Top Bar */
+        #rotate-overlay {
+            display: none; position: fixed; inset: 0; background: #111; z-index: 10000;
+            color: var(--gold); flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; padding: 20px;
+        }
+        @media screen and (orientation: portrait) {
+            #rotate-overlay { display: flex; }
+        }
+
         #room-info-bar {
-            position: fixed; top: 0; width: 100%; height: 44px;
-            padding-top: env(safe-area-inset-top);
-            background: rgba(0,0,0,0.8); display: flex; justify-content: space-between;
-            align-items: center; padding-left: 20px; padding-right: 20px;
+            position: fixed; top: 0; width: 100%; height: 40px;
+            background: rgba(0,0,0,0.9); display: flex; justify-content: space-between;
+            align-items: center; padding: 0 30px;
             border-bottom: 1px solid #333; z-index: 1000; color: var(--gold);
-            font-size: 13px; font-weight: 600; letter-spacing: 0.5px;
+            font-size: 11px; font-weight: 700;
         }
 
         #game-wrapper { 
-            display: flex; flex-direction: column; height: 100dvh; width: 100vw; 
+            display: flex; flex-direction: column; height: 100vh; width: 100vw; 
             background: radial-gradient(circle, var(--felt) 0%, #0a2114 100%); 
         }
 
         #poker-table { 
-            flex: 1; position: relative; margin: 60px 10px 10px 10px; 
-            border: 10px solid var(--wood); border-radius: 50px; 
-            box-shadow: inset 0 0 60px rgba(0,0,0,0.8), 0 10px 30px rgba(0,0,0,0.5); 
+            flex: 1; position: relative; 
+            margin: 50px 60px 20px 60px;
+            border: 14px solid var(--wood); border-radius: 120px; 
+            box-shadow: inset 0 0 80px rgba(0,0,0,0.9), 0 15px 40px rgba(0,0,0,0.6); 
         }
 
-        /* Player UI */
-        .player-spot { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; width: 140px; }
-        .player-badge { background: rgba(0,0,0,0.8); padding: 5px 12px; border-radius: 12px; border: 1px solid var(--gold); font-size: 11px; color: #fff; font-weight: 700; transition: 0.3s; }
-        .player-badge.is-ready { background: #27ae60; border-color: #fff; box-shadow: 0 0 12px #2ecc71; }
+        .player-spot { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; width: 130px; }
+        .player-badge { background: rgba(0,0,0,0.85); padding: 4px 12px; border-radius: 10px; border: 1px solid var(--gold); font-size: 11px; color: #fff; font-weight: 700; white-space: nowrap; }
+        .player-badge.is-ready { background: #27ae60; border-color: #fff; box-shadow: 0 0 15px #2ecc71; }
         
-        .card-row { 
-            display: grid;
-            grid-template-columns: repeat(3, 42px);
-            grid-template-rows: repeat(2, 60px);
-            justify-content: center;
-            gap: 4px;
-            margin-top: 5px;
-        }
-        .card-img { 
-            width: 42px; 
-            height: 60px; 
-            border-radius: 4px; 
-            transition: transform 0.2s; 
-            background: white; 
-            box-shadow: 2px 2px 8px rgba(0,0,0,0.5); 
-        }
-        .card-img.active { transform: translateY(-15px) scale(1.1); border: 2.5px solid var(--gold); z-index: 100; box-shadow: 0 0 15px var(--gold); }
+        .card-row { display: grid; grid-template-columns: repeat(3, 38px); gap: 4px; margin-top: 6px; justify-content: center; }
+        .card-img { width: 38px; height: 55px; border-radius: 4px; background: white; box-shadow: 2px 2px 8px rgba(0,0,0,0.5); transition: transform 0.2s; }
+        .card-img.active { transform: translateY(-12px); border: 2px solid var(--gold); box-shadow: 0 0 10px var(--gold); }
 
-        /* Classic Bottom Controls */
         .controls-bar { 
             background: #111; border-top: 1px solid #333; 
-            display: grid; grid-template-columns: 1fr 1.5fr 1fr; gap: 8px; 
-            padding: 12px 12px calc(var(--safe-bottom) + 12px) 12px; 
+            display: flex; justify-content: center; gap: 8px;
+            padding: 10px 20px calc(var(--safe-bottom) + 10px) 20px; 
         }
-        .action-group { display: flex; flex-direction: column; gap: 6px; }
-
-        button { padding: 14px 0; border: none; border-radius: 12px; font-weight: 800; font-size: 11px; color: white; text-transform: uppercase; transition: opacity 0.2s; cursor: pointer; }
-        button:active { opacity: 0.7; transform: scale(0.98); }
-        
+        button { padding: 10px 12px; border: none; border-radius: 10px; font-weight: 800; font-size: 10px; color: white; cursor: pointer; }
+        button:active { transform: scale(0.95); opacity: 0.8; }
         .btn-gold { background: var(--gold); color: #000; }
         .btn-blue { background: #2980b9; }
         .btn-green { background: #27ae60; }
@@ -71,67 +60,60 @@
         .btn-reveal { background: #d35400; }
         .btn-reset { background: #c0392b; }
 
-        /* Chat */
-        #chat-box { 
-            position: fixed; bottom: -450px; left: 0; width: 100%; height: 400px; 
-            background: rgba(15, 15, 15, 0.98); backdrop-filter: blur(15px);
-            border-top: 2px solid var(--gold); transition: bottom 0.3s ease; z-index: 2000;
-            display: flex; flex-direction: column; border-radius: 25px 25px 0 0;
-        }
-        #chat-box.open { bottom: 0; }
+        #login-screen { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .login-input { width: 280px; padding: 14px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--gold); background: #111; color: white; font-size: 16px; text-align: center; }
+        
+        #chat-box { position: fixed; right: -320px; top: 0; width: 300px; height: 100%; background: rgba(10,10,10,0.95); border-left: 2px solid var(--gold); transition: right 0.3s; z-index: 2000; display: flex; flex-direction: column; }
+        #chat-box.open { right: 0; }
         #chat-messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; }
-        .msg { background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 15px; color: white; font-size: 14px; width: fit-content; max-width: 85%; }
+        .msg { background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 12px; color: white; font-size: 13px; }
         .msg-own { align-self: flex-end; background: var(--gold); color: #000; font-weight: 700; }
 
-        #login-screen { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .login-input { width: 85%; max-width: 320px; padding: 16px; margin-bottom: 12px; border-radius: 12px; border: 1px solid var(--gold); background: #111; color: white; font-size: 16px; text-align: center; }
+        #lang-toggle { background: #333; border: 1px solid var(--gold); color: var(--gold); padding: 5px 10px; border-radius: 5px; font-size: 10px; cursor: pointer; min-width: 100px; }
     </style>
 </head>
 <body>
 
+<div id="rotate-overlay">
+    <h2 id="txt-rotate-title">🔄 PLEASE ROTATE PHONE</h2>
+    <p id="txt-rotate-sub">Landscape mode required.</p>
+</div>
+
 <div id="login-screen">
-    <h1 style="color:var(--gold); margin-bottom:30px; letter-spacing: 2px;">TOS LENG</h1>
-    <input id="roomInput" class="login-input" placeholder="ROOM NAME">
-    <input id="passInput" class="login-input" type="password" placeholder="PASSWORD">
-    <input id="nameInput" class="login-input" placeholder="YOUR NAME">
-    <button onclick="join()" style="width:85%; max-width:320px; background:var(--gold); color:black; font-size:16px;">START GAME</button>
+    <h1 style="color:var(--gold); margin-bottom:10px; letter-spacing: 4px; font-size: 40px;">TOS LENG</h1>
+    <p style="color: #888; margin-bottom: 20px;">CASINO PRO - GLOBAL</p>
+    <input id="roomInput" class="login-input" placeholder="Room Name">
+    <input id="passInput" class="login-input" type="password" placeholder="Password">
+    <input id="nameInput" class="login-input" placeholder="Your Name">
+    <button onclick="join()" id="btn-login-text" style="width:280px; background:var(--gold); color:black; font-size:16px; font-weight: bold;">JOIN GAME</button>
 </div>
 
 <div id="room-info-bar">
     <span id="display-room">TABLE: -</span>
-    <span id="display-name">PLAYER: -</span>
+    <div>
+        <span id="display-name">PLAYER: -</span>
+        <button id="lang-toggle" onclick="cycleLanguage()">🇰🇭 KM</button>
+    </div>
 </div>
 
 <div id="game-wrapper">
     <div id="poker-table"></div>
-    
     <div class="controls-bar">
-        <div class="action-group">
-            <button class="btn-gold" onclick="toggleChat()" style="position:relative;">
-                CHAT
-                <span id="chatBadge" style="display:none; position:absolute; top:-6px; right:-6px; background:red; color:white; font-size:10px; font-weight:700; padding:2px 6px; border-radius:10px;">0</span>
-            </button>
-        </div>
-        
-        <div class="action-group">
-            <button id="dealBtn" class="btn-blue" onclick="deal()">DEAL HAND</button>
-            <button id="readyBtn" class="btn-green" style="display:none;" onclick="toggleReady(true)">I'M READY</button>
-            <button id="notReadyBtn" class="btn-grey" style="display:none;" onclick="toggleReady(false)">UNREADY</button>
-        </div>
-
-        <div class="action-group">
-            <button class="btn-reveal" onclick="reveal()">REVEAL</button>
-            <button class="btn-reset" onclick="resetGame()">RESET</button>
-        </div>
+        <button class="btn-gold" id="btn-chat" onclick="toggleChat()" style="position:relative;">CHAT <span id="chatBadge" style="display:none; position:absolute; top:-5px; right:-5px; background:red; color:white; font-size:9px; padding:2px 5px; border-radius:10px;">0</span></button>
+        <button id="dealBtn" class="btn-blue" onclick="deal()">DEAL</button>
+        <button id="readyBtn" class="btn-green" style="display:none;" onclick="toggleReady(true)">READY</button>
+        <button id="notReadyBtn" class="btn-grey" style="display:none;" onclick="toggleReady(false)">UNREADY</button>
+        <button class="btn-reveal" id="btn-reveal" onclick="reveal()">REVEAL ALL</button>
+        <button class="btn-reset" id="btn-reset" onclick="resetGame()">RESET</button>
     </div>
 </div>
 
 <div id="chat-box">
-    <div style="padding: 12px; text-align: center; color: var(--gold); font-weight: bold; cursor:pointer;" onclick="toggleChat()">CLOSE CHAT</div>
+    <div id="btn-chat-close" style="padding: 15px; border-bottom: 1px solid #333; color: var(--gold); font-weight: bold; cursor:pointer;" onclick="toggleChat()">✕ CLOSE</div>
     <div id="chat-messages"></div>
-    <div style="padding:10px; display:flex; gap:8px; background:#000; padding-bottom: calc(var(--safe-bottom) + 10px);">
-        <input id="chatInput" style="flex:1; padding:12px; border-radius:20px; border:none; background:#222; color:white;" placeholder="Message..." onkeypress="if(event.key==='Enter') sendChat()">
-        <button onclick="sendChat()" style="width: 70px; background: var(--gold); color: black;">SEND</button>
+    <div style="padding:10px; display:flex; gap:5px;">
+        <input id="chatInput" style="flex:1; padding:10px; border-radius:8px; border:none; background:#222; color:white;" placeholder="Message..." onkeypress="if(event.key==='Enter') sendChat()">
+        <button onclick="sendChat()" id="btn-chat-send" style="background: var(--gold); color: black; padding: 5px 10px;">SEND</button>
     </div>
 </div>
 
@@ -148,9 +130,72 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    let room, player, pass;
-    let selectedIdx = null;
-    let unreadCount = 0;
+    let room, player, pass, selectedIdx = null, unreadCount = 0;
+    
+    const languages = ['km', 'en', 'cn', 'jp'];
+    let langIndex = 0; // Starts with Khmer
+
+    const langData = {
+        km: {
+            flag: "🇰🇭 KM", login: "ចូលលេង", roomPlace: "ឈ្មោះបន្ទប់", passPlace: "លេខកូដសម្ងាត់", namePlace: "ឈ្មោះរបស់អ្នក",
+            table: "តុ៖ ", player: "អ្នកលេង៖ ", chat: "ជជែក", deal: "ចែកបៀ", ready: "រួចរាល់", 
+            unready: "មិនទាន់រួចរាល់", reveal: "បើកបៀទាំងអស់", reset: "លេងថ្មី", close: "✕ បិទ", 
+            send: "ផ្ញើ", msgPlace: "សរសេរអ្វីមួយ...", rotateT: "🔄 សូមបង្វិលទូរសព្ទរបស់អ្នក", rotateS: "ហ្គេមនេះតម្រូវឱ្យលេងផ្តេក",
+            confirmReset: "តើអ្នកចង់ចាប់ផ្តើមទឹកថ្មីមែនទេ?", me: "ខ្ញុំ"
+        },
+        en: {
+            flag: "🇺🇸 EN", login: "JOIN GAME", roomPlace: "Room Name", passPlace: "Password", namePlace: "Your Name",
+            table: "TABLE: ", player: "PLAYER: ", chat: "CHAT", deal: "DEAL", ready: "READY", 
+            unready: "UNREADY", reveal: "REVEAL ALL", reset: "RESET", close: "✕ CLOSE", 
+            send: "SEND", msgPlace: "Message...", rotateT: "🔄 PLEASE ROTATE PHONE", rotateS: "Landscape mode required.",
+            confirmReset: "Start new round?", me: "YOU"
+        },
+        cn: {
+            flag: "🇨🇳 CN", login: "进入游戏", roomPlace: "房间名称", passPlace: "密码", namePlace: "你的名字",
+            table: "桌号: ", player: "玩家: ", chat: "聊天", deal: "发牌", ready: "准备好了", 
+            unready: "取消准备", reveal: "全部摊牌", reset: "重置游戏", close: "✕ 关闭", 
+            send: "发送", msgPlace: "说点什么...", rotateT: "🔄 请横屏游戏", rotateS: "为了更好的体验，请将手机横置",
+            confirmReset: "确定要开始新的一轮吗？", me: "我"
+        },
+        jp: {
+            flag: "🇯🇵 JP", login: "参加する", roomPlace: "ルーム名", passPlace: "パスワード", namePlace: "お名前",
+            table: "テーブル: ", player: "プレイヤー: ", chat: "チャット", deal: "配る", ready: "準備完了", 
+            unready: "未準備", reveal: "全員公開", reset: "リセット", close: "✕ 閉じる", 
+            send: "送信", msgPlace: "メッセージを入力...", rotateT: "🔄 画面を横にしてください", rotateS: "このゲームは横画面専用です",
+            confirmReset: "新しいラウンドを開始しますか？", me: "私"
+        }
+    };
+
+    window.cycleLanguage = () => {
+        langIndex = (langIndex + 1) % languages.length;
+        updateUILanguage();
+        if(room) listen(); 
+    };
+
+    function updateUILanguage() {
+        const currentLang = languages[langIndex];
+        const l = langData[currentLang];
+        document.getElementById("lang-toggle").innerText = l.flag;
+        document.getElementById("btn-login-text").innerText = l.login;
+        document.getElementById("roomInput").placeholder = l.roomPlace;
+        document.getElementById("passInput").placeholder = l.passPlace;
+        document.getElementById("nameInput").placeholder = l.namePlace;
+        document.getElementById("btn-chat").childNodes[0].nodeValue = l.chat + " ";
+        document.getElementById("dealBtn").innerText = l.deal;
+        document.getElementById("readyBtn").innerText = l.ready;
+        document.getElementById("notReadyBtn").innerText = l.unready;
+        document.getElementById("btn-reveal").innerText = l.reveal;
+        document.getElementById("btn-reset").innerText = l.reset;
+        document.getElementById("btn-chat-close").innerText = l.close;
+        document.getElementById("btn-chat-send").innerText = l.send;
+        document.getElementById("chatInput").placeholder = l.msgPlace;
+        document.getElementById("txt-rotate-title").innerText = l.rotateT;
+        document.getElementById("txt-rotate-sub").innerText = l.rotateS;
+        if(room) {
+            document.getElementById("display-room").innerText = l.table + room.toUpperCase();
+            document.getElementById("display-name").innerText = l.player + player.toUpperCase();
+        }
+    }
 
     const getCardImg = (val) => {
         if (!val) return "https://deckofcardsapi.com/static/img/back.png";
@@ -164,30 +209,15 @@
         room = document.getElementById("roomInput").value.trim().toLowerCase();
         player = document.getElementById("nameInput").value.trim();
         pass = document.getElementById("passInput").value.trim();
-        
-        if(!room || !player) {
-            alert("Please enter Room Name and Your Name");
-            return;
-        }
+        if(!room || !player) return alert("Please enter room & name");
 
         get(ref(db, `rooms/${room}/config`)).then(snap => {
             const config = snap.val();
-            if(config && config.pass !== pass) {
-                alert("Wrong Password!");
-                return;
-            }
-            if(!config) {
-                set(ref(db, `rooms/${room}/config`), {pass: pass});
-            }
-
+            if(config && config.pass !== pass) return alert("Wrong Password!");
+            if(!config) set(ref(db, `rooms/${room}/config`), {pass: pass});
             document.getElementById("login-screen").style.display = "none";
-            document.getElementById("display-room").innerText = "TABLE: " + room.toUpperCase();
-            document.getElementById("display-name").innerText = player.toUpperCase();
-
-            listen();
-            listenChat();
-        }).catch(err => {
-            alert("Connection Error: " + err.message);
+            updateUILanguage();
+            listen(); listenChat();
         });
     };
 
@@ -196,52 +226,38 @@
             const data = snap.val();
             const table = document.getElementById("poker-table");
             table.innerHTML = "";
-            if(!data) return;
-
-            const players = data.players ? Object.keys(data.players) : [];
-            const myCards = (data.players && data.players[player]) ? data.players[player] : null;
+            if(!data || !data.players) return;
+            const players = Object.keys(data.players);
+            const myCards = data.players[player];
             const amIReady = (data.readyStatus && data.readyStatus[player]);
-
             document.getElementById("dealBtn").style.display = myCards ? "none" : "block";
             document.getElementById("readyBtn").style.display = (myCards && !amIReady) ? "block" : "none";
             document.getElementById("notReadyBtn").style.display = amIReady ? "block" : "none";
-
+            const positions = [{x: 50, y: 15}, {x: 88, y: 35}, {x: 88, y: 65}, {x: 50, y: 85}, {x: 12, y: 65}, {x: 12, y: 35}];
             players.forEach((p, i) => {
-                const angle = (i * (360 / players.length)) * (Math.PI / 180);
                 const isPReady = (data.readyStatus && data.readyStatus[p]);
+                const pos = positions[i] || {x:50, y:50};
                 const spot = document.createElement("div");
                 spot.className = "player-spot";
-                spot.style.left = (50 + 38 * Math.cos(angle)) + "%";
-                spot.style.top = (50 + 35 * Math.sin(angle)) + "%";
-
+                spot.style.left = pos.x + "%"; spot.style.top = pos.y + "%";
                 const badge = document.createElement("div");
                 badge.className = "player-badge" + (isPReady ? " is-ready" : "");
-                badge.innerText = (p === player ? "YOU" : p) + (isPReady ? " ✅" : "");
-                
+                badge.innerText = (p === player ? langData[languages[langIndex]].me : p.substring(0,10)) + (isPReady ? " ✅" : "");
                 const cardsDiv = document.createElement("div");
                 cardsDiv.className = "card-row";
-                
-                if (data.players[p]) {
-                    data.players[p].forEach((c, idx) => {
-                        const img = document.createElement("img");
-                        img.className = "card-img";
-                        if(selectedIdx === idx && p === player) img.classList.add("active");
-                        img.src = (p === player || c.faceUp) ? getCardImg(c.val) : getCardImg(null);
-                        
-                        if(p === player && !c.faceUp && !amIReady) {
-                            img.onclick = () => {
-                                if(selectedIdx === null) {
-                                    selectedIdx = idx;
-                                    listen(); // Refresh UI to show active card
-                                } else { 
-                                    swapCards(selectedIdx, idx); 
-                                    selectedIdx = null; 
-                                }
-                            };
-                        }
-                        cardsDiv.appendChild(img);
-                    });
-                }
+                data.players[p].forEach((c, idx) => {
+                    const img = document.createElement("img");
+                    img.className = "card-img";
+                    if(selectedIdx === idx && p === player) img.classList.add("active");
+                    img.src = (p === player || c.faceUp) ? getCardImg(c.val) : getCardImg(null);
+                    if(p === player && !c.faceUp && !amIReady) {
+                        img.onclick = () => {
+                            if(selectedIdx === null) { selectedIdx = idx; listen(); }
+                            else { swapCards(selectedIdx, idx); selectedIdx = null; }
+                        };
+                    }
+                    cardsDiv.appendChild(img);
+                });
                 spot.appendChild(badge); spot.appendChild(cardsDiv); table.appendChild(spot);
             });
         });
@@ -250,55 +266,37 @@
     window.toggleChat = () => {
         const chat = document.getElementById("chat-box");
         chat.classList.toggle("open");
-        if(chat.classList.contains("open")){
-            unreadCount = 0;
-            const badge = document.getElementById("chatBadge");
-            badge.style.display = "none";
-        }
+        if(chat.classList.contains("open")){ unreadCount = 0; document.getElementById("chatBadge").style.display = "none"; }
     };
 
     window.sendChat = function() {
         const input = document.getElementById("chatInput");
         const text = input.value.trim();
         if(!text) return;
-        push(ref(db, `rooms/${room}/chats`), {
-            user: player,
-            text: text,
-            time: Date.now()
-        });
+        push(ref(db, `rooms/${room}/chats`), { user: player, text: text, time: Date.now() });
         input.value = "";
     };
 
     function listenChat() {
         onValue(ref(db, `rooms/${room}/chats`), snap => {
             const list = document.getElementById("chat-messages");
-            const chatBox = document.getElementById("chat-box");
-            const wasOpen = chatBox.classList.contains("open");
+            const wasOpen = document.getElementById("chat-box").classList.contains("open");
             list.innerHTML = "";
             const data = snap.val();
             if(!data) return;
-
             Object.values(data).forEach(m => {
                 const div = document.createElement("div");
                 div.className = "msg" + (m.user === player ? " msg-own" : "");
                 div.innerText = `${m.user}: ${m.text}`;
                 list.appendChild(div);
-                if(!wasOpen && m.user !== player){
-                    unreadCount++;
-                }
+                if(!wasOpen && m.user !== player) unreadCount++;
             });
-
-            if(unreadCount > 0){
-                const badge = document.getElementById("chatBadge");
-                badge.style.display = "block";
-                badge.innerText = unreadCount;
-            }
+            if(unreadCount > 0){ const b = document.getElementById("chatBadge"); b.style.display = "block"; b.innerText = unreadCount; }
             list.scrollTop = list.scrollHeight;
         });
     }
 
     window.toggleReady = (s) => set(ref(db, `rooms/${room}/readyStatus/${player}`), s);
-
     window.deal = () => {
         const s=["♠","♥","♦","♣"], v=["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
         let d=[]; s.forEach(si=>v.forEach(vi=>d.push(vi+si)));
@@ -306,37 +304,31 @@
         set(ref(db, `rooms/${room}/players/${player}`), cards);
         set(ref(db, `rooms/${room}/readyStatus/${player}`), false);
     };
-
     window.reveal = () => {
         get(ref(db, `rooms/${room}/players`)).then(snap => {
             let data = snap.val(); if(!data) return;
             let updates = {};
-            for(let p in data) {
-                data[p].forEach((c,i)=> {
-                    updates[`rooms/${room}/players/${p}/${i}/faceUp`] = true;
-                });
-            }
+            for(let p in data) data[p].forEach((c,i)=> updates[`rooms/${room}/players/${p}/${i}/faceUp`] = true);
             update(ref(db), updates);
         });
     };
-
     window.resetGame = () => { 
-        if(confirm("New Round?")) { 
+        if(confirm(langData[languages[langIndex]].confirmReset)) { 
             set(ref(db, `rooms/${room}/players`), null); 
             set(ref(db, `rooms/${room}/readyStatus`), null); 
             set(ref(db, `rooms/${room}/chats`), null); 
         } 
     };
-
     function swapCards(a, b) {
         const pRef = ref(db, `rooms/${room}/players/${player}`);
         get(pRef).then(snap => {
-            let c = snap.val(); 
-            if(!c) return;
+            let c = snap.val(); if(!c) return;
             [c[a], c[b]] = [c[b], c[a]];
             set(pRef, c);
         });
     }
+    
+    updateUILanguage();
 </script>
 </body>
 </html>
