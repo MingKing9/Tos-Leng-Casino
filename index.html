@@ -8,9 +8,9 @@
         :root { --gold: #d4af37; --felt: #1a5e37; --wood: #3d2b1f; --safe-bottom: env(safe-area-inset-bottom); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: -apple-system, sans-serif; }
-
-        /* Language Toggle Button */
-        #lang-toggle { position: absolute; top: 50px; right: 20px; background: #333; color: var(--gold); border: 1px solid var(--gold); padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; z-index: 10002; font-weight: bold; }
+        
+        /* Language Toggle - Placed prominently */
+        #lang-toggle { position: absolute; top: 10px; right: 10px; background: #222; border: 1px solid var(--gold); color: var(--gold); padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; z-index: 10002; font-weight: bold; }
 
         #room-info-bar { position: fixed; top: 0; width: 100%; height: 44px; padding-top: env(safe-area-inset-top); background: rgba(0,0,0,0.8); display: flex; justify-content: space-between; align-items: center; padding-left: 20px; padding-right: 20px; border-bottom: 1px solid #333; z-index: 1000; color: var(--gold); font-size: 13px; font-weight: 600; }
         #game-wrapper { display: flex; flex-direction: column; height: 100dvh; width: 100vw; background: radial-gradient(circle, var(--felt) 0%, #0a2114 100%); }
@@ -37,7 +37,7 @@
 
 <div id="login-screen">
     <button id="lang-toggle" onclick="cycleLang()">🇰🇭 KM</button>
-    <h1 style="color:var(--gold); margin-bottom:30px; letter-spacing: 2px;">TOS LENG</h1>
+    <h1 id="txt-title" style="color:var(--gold); margin-bottom:30px; letter-spacing: 2px;">TOS LENG</h1>
     <input id="roomInput" class="login-input" placeholder="ROOM NAME">
     <input id="passInput" class="login-input" type="password" placeholder="PASSWORD">
     <input id="nameInput" class="login-input" placeholder="YOUR NAME">
@@ -52,11 +52,9 @@
 <div id="game-wrapper">
     <div id="poker-table"></div>
     <div class="controls-bar">
+        <button id="btn-chat" class="btn-gold" onclick="toggleChat()">CHAT</button>
         <div class="action-group">
-            <button id="btn-chat" class="btn-gold" onclick="toggleChat()">CHAT</button>
-        </div>
-        <div class="action-group">
-            <button id="dealBtn" class="btn-blue" onclick="deal()">DEAL HAND</button>
+            <button id="dealBtn" class="btn-blue" onclick="deal()">DEAL</button>
             <button id="readyBtn" class="btn-green" style="display:none;" onclick="toggleReady(true)">READY</button>
             <button id="notReadyBtn" class="btn-grey" style="display:none;" onclick="toggleReady(false)">UNREADY</button>
         </div>
@@ -68,11 +66,11 @@
 </div>
 
 <div id="chat-box">
-    <div id="txt-close" style="padding: 12px; text-align: center; color: var(--gold); font-weight: bold; cursor:pointer;" onclick="toggleChat()">CLOSE CHAT</div>
+    <div id="txt-close" style="padding:12px; text-align:center; color:var(--gold); font-weight:bold; cursor:pointer;" onclick="toggleChat()">CLOSE</div>
     <div id="chat-messages"></div>
-    <div style="padding:10px; display:flex; gap:8px; background:#000; padding-bottom: calc(var(--safe-bottom) + 10px);">
+    <div style="padding:10px; display:flex; gap:8px; background:#000;">
         <input id="chatInput" style="flex:1; padding:12px; border-radius:20px; border:none; background:#222; color:white;" placeholder="Message...">
-        <button id="btn-send" onclick="sendChat()" style="width: 70px; background: var(--gold); color: black;">SEND</button>
+        <button id="btn-send" onclick="sendChat()" style="width:70px; background:var(--gold);">SEND</button>
     </div>
 </div>
 
@@ -80,32 +78,55 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, update, onValue, get, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    const translations = {
-        km: { start: "ចាប់ផ្តើមលេង", chat: "ជជែក", deal: "ចែកបៀ", ready: "រួចរាល់", unready: "មិនទាន់រួច", reveal: "បើកបៀ", reset: "លេងសារថ្មី", close: "បិទការជជែក", send: "ផ្ញើ", flag: "🇰🇭 KM" },
-        en: { start: "START GAME", chat: "CHAT", deal: "DEAL HAND", ready: "I'M READY", unready: "UNREADY", reveal: "REVEAL", reset: "RESET", close: "CLOSE CHAT", send: "SEND", flag: "🇺🇸 EN" },
-        cn: { start: "开始游戏", chat: "聊天", deal: "发牌", ready: "准备", unready: "取消", reveal: "摊牌", reset: "重置", close: "关闭聊天", send: "发送", flag: "🇨🇳 CN" },
-        jp: { start: "開始", chat: "チャット", deal: "配る", ready: "準備完了", unready: "未準備", reveal: "公開", reset: "リセット", close: "閉じる", send: "送信", flag: "🇯🇵 JP" }
+    // --- LANGUAGE SYSTEM ---
+    const t = {
+        km: { title: "ទាស់លេង", start: "ចូលលេង", chat: "ជជែក", deal: "ចែកបៀ", ready: "រួចរាល់", unready: "មិនទាន់", reveal: "បើកបៀ", reset: "លេងសារថ្មី", close: "បិទ", send: "ផ្ញើ", flag: "🇰🇭 KM" },
+        en: { title: "TOS LENG", start: "START GAME", chat: "CHAT", deal: "DEAL", ready: "READY", unready: "UNREADY", reveal: "REVEAL", reset: "RESET", close: "CLOSE", send: "SEND", flag: "🇺🇸 EN" },
+        cn: { title: "讨冷", start: "开始游戏", chat: "聊天", deal: "发牌", ready: "准备", unready: "取消", reveal: "摊牌", reset: "重置", close: "关闭", send: "发送", flag: "🇨🇳 CN" },
+        jp: { title: "トスレン", start: "参加", chat: "チャット", deal: "配る", ready: "準備完了", unready: "未準備", reveal: "公開", reset: "リセット", close: "閉じる", send: "送信", flag: "🇯🇵 JP" }
     };
     let lang = 'en';
     window.cycleLang = () => {
-        const keys = Object.keys(translations);
+        const keys = Object.keys(t);
         lang = keys[(keys.indexOf(lang) + 1) % keys.length];
-        const t = translations[lang];
-        document.getElementById("lang-toggle").innerText = t.flag;
-        document.getElementById("btn-start").innerText = t.start;
-        document.getElementById("btn-chat").innerText = t.chat;
-        document.getElementById("dealBtn").innerText = t.deal;
-        document.getElementById("readyBtn").innerText = t.ready;
-        document.getElementById("notReadyBtn").innerText = t.unready;
-        document.getElementById("btn-reveal").innerText = t.reveal;
-        document.getElementById("btn-reset").innerText = t.reset;
-        document.getElementById("txt-close").innerText = t.close;
-        document.getElementById("btn-send").innerText = t.send;
+        const d = t[lang];
+        document.getElementById("lang-toggle").innerText = d.flag;
+        document.getElementById("txt-title").innerText = d.title;
+        document.getElementById("btn-start").innerText = d.start;
+        document.getElementById("btn-chat").innerText = d.chat;
+        document.getElementById("dealBtn").innerText = d.deal;
+        document.getElementById("readyBtn").innerText = d.ready;
+        document.getElementById("notReadyBtn").innerText = d.unready;
+        document.getElementById("btn-reveal").innerText = d.reveal;
+        document.getElementById("btn-reset").innerText = d.reset;
+        document.getElementById("txt-close").innerText = d.close;
+        document.getElementById("btn-send").innerText = d.send;
     };
 
-    // --- PASTE YOUR FIREBASE LOGIC STARTING HERE ---
-    const firebaseConfig = { apiKey: "AIzaSyBjsVUxlNjGUnYioHOlKmk1wEMoVTSVxLw", authDomain: "the-family-card-game.firebaseapp.com", databaseURL: "https://the-family-card-game-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "the-family-card-game" };
-    // ... (All your remaining existing code)
+    // --- FIREBASE LOGIC ---
+    const firebaseConfig = { 
+        apiKey: "YOUR_API_KEY_HERE", 
+        authDomain: "your-project.firebaseapp.com", 
+        databaseURL: "https://your-project.firebaseio.com", 
+        projectId: "your-project-id" 
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    let room, player, pass, selectedIdx = null;
+
+    window.join = function() {
+        room = document.getElementById("roomInput").value.trim().toLowerCase();
+        player = document.getElementById("nameInput").value.trim();
+        pass = document.getElementById("passInput").value.trim();
+        if(!room || !player) return alert("Enter Room & Name");
+        document.getElementById("login-screen").style.display = "none";
+        document.getElementById("display-room").innerText = "TABLE: " + room.toUpperCase();
+        document.getElementById("display-name").innerText = player.toUpperCase();
+        listen();
+    };
+    
+    // (Ensure you paste your original 'listen', 'deal', 'reveal' functions here!)
+    // If the game doesn't start, make sure your full 'listen' function logic is inside this script block.
 </script>
 </body>
 </html>
