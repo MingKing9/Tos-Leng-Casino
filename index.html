@@ -3,104 +3,80 @@
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 
-<title>Tos Leng Casino</title>
+<title>Tos Leng Table</title>
 
 <style>
 
 body{
 margin:0;
 font-family:Arial;
-background:#0f3b24;
+background:#134b2c;
 color:white;
-overflow:hidden;
 }
 
-#login{
-position:absolute;
-inset:0;
-display:flex;
-flex-direction:column;
-justify-content:center;
-align-items:center;
-background:black;
-gap:10px;
+button{
+padding:12px;
+border:none;
+border-radius:10px;
+font-weight:bold;
+cursor:pointer;
 }
 
-input{
+input,select{
 padding:12px;
 border-radius:10px;
 border:none;
 width:250px;
 }
 
-button{
-padding:14px;
-border:none;
-border-radius:10px;
-font-weight:bold;
-font-size:14px;
-cursor:pointer;
+#login{
+position:absolute;
+inset:0;
+background:black;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+gap:12px;
 }
 
-.btn{
-background:#d4af37;
-color:black;
+#game{
+display:none;
 }
 
 #topbar{
-height:50px;
-background:black;
+background:#000;
+padding:10px;
 display:flex;
 justify-content:space-between;
 align-items:center;
-padding:10px;
-}
-
-#pot{
-font-weight:bold;
-color:#ffd700;
 }
 
 #table{
-position:absolute;
-top:50px;
-bottom:120px;
-left:0;
-right:0;
 display:flex;
-justify-content:center;
-align-items:center;
 flex-wrap:wrap;
-gap:20px;
+gap:15px;
+padding:20px;
+justify-content:center;
 }
 
 .player{
-background:#1e1e1e;
-padding:10px;
+background:#222;
+padding:12px;
 border-radius:10px;
 text-align:center;
-width:130px;
+width:140px;
 }
 
 .money{
-color:#00ff90;
+color:#00ff99;
 font-size:14px;
 }
 
-.cardrow{
-display:flex;
-gap:3px;
-margin-top:5px;
-}
-
-.cardrow img{
-width:30px;
-}
-
 #controls{
-position:absolute;
+position:fixed;
 bottom:0;
 left:0;
 right:0;
@@ -108,17 +84,18 @@ background:#111;
 padding:10px;
 display:flex;
 flex-direction:column;
-gap:6px;
+gap:8px;
 }
 
 .row{
 display:flex;
-gap:6px;
+gap:8px;
+justify-content:center;
 }
 
-select{
-padding:8px;
-border-radius:8px;
+.btn{
+background:#d4af37;
+color:black;
 }
 
 #lang{
@@ -136,41 +113,38 @@ right:10px;
 
 <h2>TOS LENG</h2>
 
-<input id="room" placeholder="Room">
+<select id="lang" onchange="setLang(this.value)">
+<option value="en">English</option>
+<option value="kh">ខ្មែរ</option>
+<option value="zh">中文</option>
+</select>
+
+<input id="room" placeholder="Room Name">
 
 <input id="pass" placeholder="Password">
 
 <input id="name" placeholder="Your Name">
 
-<input id="startmoney" value="50000">
+<input id="money" type="number" value="50000">
 
-<button class="btn" onclick="join()">START</button>
+<button class="btn" onclick="join()">START GAME</button>
 
 </div>
 
+
+<div id="game">
+
 <div id="topbar">
 
-<div id="roomlabel"></div>
+<div id="roomLabel"></div>
 
 <div id="pot">POT: 0</div>
 
 </div>
 
-<select id="lang" onchange="setLang(this.value)">
-<option value="en">EN</option>
-<option value="kh">KH</option>
-<option value="zh">中文</option>
-</select>
-
 <div id="table"></div>
 
 <div id="controls">
-
-<div class="row">
-<button class="btn" onclick="deal()">Deal</button>
-<button class="btn" onclick="reveal()">Reveal</button>
-<button class="btn" onclick="reset()">Reset</button>
-</div>
 
 <div class="row">
 
@@ -178,158 +152,174 @@ right:10px;
 
 <input id="amount" type="number" placeholder="Amount">
 
-<button class="btn" onclick="sendMoney()">Send</button>
+<button class="btn" onclick="sendMoney()">Send Money</button>
 
 </div>
 
 </div>
+
+</div>
+
 
 <script type="module">
 
-import {initializeApp} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import {getDatabase,ref,set,onValue,get,update} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getDatabase, ref, set, update, onValue, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-const firebaseConfig={
+
+const firebaseConfig = {
+
 apiKey:"AIzaSyBjsVUxlNjGUnYioHOlKmk1wEMoVTSVxLw",
+
 authDomain:"the-family-card-game.firebaseapp.com",
+
 databaseURL:"https://the-family-card-game-default-rtdb.asia-southeast1.firebasedatabase.app",
+
 projectId:"the-family-card-game"
+
 };
 
-const app=initializeApp(firebaseConfig);
-const db=getDatabase(app);
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
 let room;
 let player;
 
-let LANG="en";
 
-const TEXT={
-en:{deal:"Deal",send:"Send"},
-kh:{deal:"ចែក",send:"ផ្ញើ"},
-zh:{deal:"发牌",send:"发送"}
-};
+window.join = function(){
 
-window.setLang=function(l){
-LANG=l;
+room = document.getElementById("room").value.trim();
+player = document.getElementById("name").value.trim();
+
+let startMoney = parseInt(document.getElementById("money").value);
+
+if(!room || !player){
+
+alert("Please enter room and name");
+
+return;
+
 }
-
-window.join=function(){
-
-room=document.getElementById("room").value;
-player=document.getElementById("name").value;
-let start=parseInt(document.getElementById("startmoney").value);
 
 document.getElementById("login").style.display="none";
+document.getElementById("game").style.display="block";
 
-document.getElementById("roomlabel").innerText="ROOM: "+room;
+document.getElementById("roomLabel").innerText="ROOM: "+room;
 
-set(ref(db,"rooms/"+room+"/money/"+player),start);
+set(ref(db,"rooms/"+room+"/money/"+player),startMoney);
 
-listen();
+listenRoom();
 
-}
+};
 
-function listen(){
+
+function listenRoom(){
 
 onValue(ref(db,"rooms/"+room),snap=>{
 
 const data=snap.val();
 
-if(!data)return;
+if(!data) return;
+
+const players=data.money||{};
 
 const table=document.getElementById("table");
-table.innerHTML="";
 
-let players=Object.keys(data.money||{});
+table.innerHTML="";
 
 let pot=0;
 
-players.forEach(p=>{
+const target=document.getElementById("target");
 
-let m=data.money[p];
+target.innerHTML="";
+
+Object.keys(players).forEach(p=>{
+
+let m=players[p];
 
 pot+=m;
 
 const div=document.createElement("div");
+
 div.className="player";
 
-div.innerHTML=
-
-"<b>"+p+"</b>"+
-"<div class='money'>"+m+" riel</div>";
+div.innerHTML="<b>"+p+"</b><div class='money'>"+m+" riel</div>";
 
 table.appendChild(div);
+
+if(p!==player){
+
+const op=document.createElement("option");
+
+op.value=p;
+
+op.innerText=p;
+
+target.appendChild(op);
+
+}
 
 });
 
 document.getElementById("pot").innerText="POT: "+pot;
 
-const sel=document.getElementById("target");
-
-sel.innerHTML="";
-
-players.forEach(p=>{
-if(p!=player){
-
-let o=document.createElement("option");
-o.value=p;
-o.innerText=p;
-
-sel.appendChild(o);
-
-}
-});
-
 });
 
 }
+
 
 window.sendMoney=function(){
 
-let to=document.getElementById("target").value;
+const to=document.getElementById("target").value;
 
-let amount=parseInt(document.getElementById("amount").value);
+const amount=parseInt(document.getElementById("amount").value);
 
-get(ref(db,"rooms/"+room+"/money")).then(s=>{
+if(!amount) return;
 
-let d=s.val();
+const moneyRef=ref(db,"rooms/"+room+"/money");
 
-let me=d[player]||0;
+get(moneyRef).then(snap=>{
 
-let other=d[to]||0;
+let data=snap.val();
 
-me-=amount;
+let myMoney=data[player]||0;
+
+let other=data[to]||0;
+
+myMoney-=amount;
+
 other+=amount;
 
 update(ref(db),{
 
-["rooms/"+room+"/money/"+player]:me,
+["rooms/"+room+"/money/"+player]:myMoney,
+
 ["rooms/"+room+"/money/"+to]:other
 
 });
 
 });
 
+};
+
+
+window.setLang=function(lang){
+
+if(lang==="kh"){
+
+document.getElementById("room").placeholder="ឈ្មោះបន្ទប់";
+document.getElementById("pass").placeholder="លេខសម្ងាត់";
+document.getElementById("name").placeholder="ឈ្មោះអ្នក";
 }
 
-window.deal=function(){
+if(lang==="zh"){
 
-alert("Deal cards feature from your previous code can stay.");
-
+document.getElementById("room").placeholder="房间名称";
+document.getElementById("pass").placeholder="密码";
+document.getElementById("name").placeholder="玩家名字";
 }
 
-window.reveal=function(){
-
-alert("Reveal from your original code.");
-
-}
-
-window.reset=function(){
-
-set(ref(db,"rooms/"+room),null);
-
-}
+};
 
 </script>
 
