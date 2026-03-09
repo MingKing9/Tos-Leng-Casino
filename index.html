@@ -2,67 +2,63 @@
 <html lang="km">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Tos Leng - Global Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tos Leng</title>
     <style>
-        :root { --gold: #d4af37; --felt: #1a5e37; --wood: #3d2b1f; --safe-bottom: env(safe-area-inset-bottom); }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Khmer OS Battambang', 'Segoe UI', sans-serif; }
-
-        #rotate-overlay {
-            display: none; position: fixed; inset: 0; background: #111; z-index: 10000;
-            color: var(--gold); flex-direction: column; align-items: center; justify-content: center;
-            text-align: center; padding: 20px;
-        }
-        @media screen and (orientation: portrait) {
-            #rotate-overlay { display: flex; }
-        }
-
-        #room-info-bar {
-            position: fixed; top: 0; width: 100%; height: 40px;
-            background: rgba(0,0,0,0.9); display: flex; justify-content: space-between;
-            align-items: center; padding: 0 30px;
-            border-bottom: 1px solid #333; z-index: 1000; color: var(--gold);
-            font-size: 11px; font-weight: 700;
-        }
-
-        #game-wrapper { 
-            display: flex; flex-direction: column; height: 100vh; width: 100vw; 
-            background: radial-gradient(circle, var(--felt) 0%, #0a2114 100%); 
-        }
-
-        #poker-table { 
-            flex: 1; position: relative; 
-            margin: 50px 60px 20px 60px;
-            border: 14px solid var(--wood); border-radius: 120px; 
-            box-shadow: inset 0 0 80px rgba(0,0,0,0.9), 0 15px 40px rgba(0,0,0,0.6); 
-        }
-
-        .player-spot { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; width: 130px; }
-        .player-badge { background: rgba(0,0,0,0.85); padding: 4px 12px; border-radius: 10px; border: 1px solid var(--gold); font-size: 11px; color: #fff; font-weight: 700; white-space: nowrap; }
-        .player-badge.is-ready { background: #27ae60; border-color: #fff; box-shadow: 0 0 15px #2ecc71; }
+        :root { --gold: #d4af37; --felt: #1a5e37; }
+        body { margin: 0; background: #000; font-family: sans-serif; color: white; }
         
-        .card-row { display: grid; grid-template-columns: repeat(3, 38px); gap: 4px; margin-top: 6px; justify-content: center; }
-        .card-img { width: 38px; height: 55px; border-radius: 4px; background: white; box-shadow: 2px 2px 8px rgba(0,0,0,0.5); transition: transform 0.2s; }
-        .card-img.active { transform: translateY(-12px); border: 2px solid var(--gold); box-shadow: 0 0 10px var(--gold); }
-
-        .controls-bar { 
-            background: #111; border-top: 1px solid #333; 
-            display: flex; justify-content: center; gap: 8px;
-            padding: 10px 20px calc(var(--safe-bottom) + 10px) 20px; 
+        #login-screen { 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            height: 100vh; padding: 20px;
         }
-        button { padding: 10px 12px; border: none; border-radius: 10px; font-weight: 800; font-size: 10px; color: white; cursor: pointer; }
-        button:active { transform: scale(0.95); opacity: 0.8; }
-        .btn-gold { background: var(--gold); color: #000; }
-        .btn-blue { background: #2980b9; }
-        .btn-green { background: #27ae60; }
-        .btn-grey { background: #444; }
-        .btn-reveal { background: #d35400; }
-        .btn-reset { background: #c0392b; }
-
-        #login-screen { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .login-input { width: 280px; padding: 14px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--gold); background: #111; color: white; font-size: 16px; text-align: center; }
+        .login-input { width: 100%; max-width: 300px; padding: 15px; margin: 10px 0; border-radius: 8px; border: 1px solid var(--gold); background: #222; color: white; }
         
+        /* Language Button at top */
+        #lang-toggle { position: absolute; top: 20px; right: 20px; background: #333; color: var(--gold); border: 1px solid var(--gold); padding: 8px; border-radius: 5px; cursor: pointer; }
+        
+        #poker-table { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 20px; }
+        .player-spot { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; text-align: center; }
+        .card-row { display: flex; justify-content: center; gap: 5px; margin-top: 5px; }
+        .card-img { width: 40px; height: 60px; border-radius: 4px; background: white; }
+    </style>
+</head>
+<body>
+
+<button id="lang-toggle" onclick="cycleLanguage()">🇰🇭 KM</button>
+
+<div id="login-screen">
+    <h1 id="txt-title" style="color:var(--gold)">TOS LENG</h1>
+    <input id="roomInput" class="login-input" placeholder="Room">
+    <input id="passInput" class="login-input" type="password" placeholder="Pass">
+    <input id="nameInput" class="login-input" placeholder="Name">
+    <button onclick="join()" id="btn-login" style="padding:15px; width:300px; background:var(--gold);">JOIN</button>
+</div>
+
+<script>
+    const languages = ['km', 'en', 'cn', 'jp'];
+    let langIndex = 0;
+    
+    const langData = {
+        km: { title: "ទាស់លេង", room: "ឈ្មោះបន្ទប់", pass: "លេខកូដ", name: "ឈ្មោះ", btn: "ចូលលេង", flag: "🇰🇭 KM" },
+        en: { title: "TOS LENG", room: "Room Name", pass: "Password", name: "Your Name", btn: "JOIN", flag: "🇺🇸 EN" },
+        cn: { title: "讨冷", room: "房间名称", pass: "密码", name: "名字", btn: "进入", flag: "🇨🇳 CN" },
+        jp: { title: "トスレン", room: "ルーム名", pass: "パスワード", name: "お名前", btn: "参加", flag: "🇯🇵 JP" }
+    };
+
+    function cycleLanguage() {
+        langIndex = (langIndex + 1) % languages.length;
+        const l = langData[languages[langIndex]];
+        document.getElementById("lang-toggle").innerText = l.flag;
+        document.getElementById("txt-title").innerText = l.title;
+        document.getElementById("roomInput").placeholder = l.room;
+        document.getElementById("passInput").placeholder = l.pass;
+        document.getElementById("nameInput").placeholder = l.name;
+        document.getElementById("btn-login").innerText = l.btn;
+    }
+</script>
+</body>
+</html>        
         #chat-box { position: fixed; right: -320px; top: 0; width: 300px; height: 100%; background: rgba(10,10,10,0.95); border-left: 2px solid var(--gold); transition: right 0.3s; z-index: 2000; display: flex; flex-direction: column; }
         #chat-box.open { right: 0; }
         #chat-messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; }
