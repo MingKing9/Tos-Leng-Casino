@@ -60,21 +60,76 @@
         <option value="kh">ភាសាខ្មែរ</option>
         <option value="en">ENGLISH</option>
         <option value="cn">中文</option>
+<div id="login-screen">
+    <h1 style="color:var(--gold); letter-spacing:3px;">TOS LENG</h1>
+    <select id="langSelect" class="login-input" style="background:var(--gold); color:black; font-weight:bold;">
+        <option value="kh">ភាសាខ្មែរ</option>
+        <option value="en">ENGLISH</option>
+        <option value="cn">中文</option>
     </select>
-    <input id="roomInput" class="login-input" placeholder="ឈ្មោះបន្ទប់ / Room Name">
-    <input id="passInput" class="login-input" type="password" placeholder="លេខសម្ងាត់ / Password">
-    <input id="nameInput" class="login-input" placeholder="ឈ្មោះរបស់អ្នក / Name">
+    <input id="roomInput" class="login-input" placeholder="Room / បន្ទប់ / 房间">
+    <input id="passInput" class="login-input" type="password" placeholder="Password / សម្ងាត់ / 密码">
+    <input id="nameInput" class="login-input" placeholder="Name / ឈ្មោះ / 名字">
     <input id="moneyInput" class="login-input" type="number" value="50000">
-    <button onclick="join()" id="btn-start" class="btn-gold" style="width:85%; max-width:300px; font-size:18px;">ចូលលេង</button>
+    <button onclick="join()" id="btn-start" class="btn-gold" style="width:85%; max-width:300px; font-size:18px;">START</button>
 </div>
 
 <div id="transfer-modal" class="modal" style="display:none;">
-    <h2 style="color:var(--gold)" id="txt-trans-title">ផ្ទេរប្រាក់</h2>
+    <h2 style="color:var(--gold)" id="txt-trans-title">TRANSFER</h2>
     <select id="transfer-to" class="login-input"></select>
-    <input id="transfer-amount" class="login-input" type="number" placeholder="ចំនួនទឹកប្រាក់">
-    <button onclick="confirmTransfer()" id="btn-send-money" class="btn-green" style="width:85%; margin-bottom:10px;">បញ្ជូន</button>
-    <button onclick="document.getElementById('transfer-modal').style.display='none'" id="btn-cancel-money" class="btn-red" style="width:85%;">បោះបង់</button>
+    <input id="transfer-amount" class="login-input" type="number" id="inp-amount-placeholder">
+    <button onclick="confirmTransfer()" id="btn-send-money" class="btn-green" style="width:85%; margin-bottom:10px;">SEND</button>
+    <button onclick="document.getElementById('transfer-modal').style.display='none'" id="btn-cancel-money" class="btn-red" style="width:85%;">CANCEL</button>
 </div>
+
+<script type="module">
+    // ... (keep your firebase init code)
+
+    const dictionary = {
+        kh: { 
+            start: "ចូលលេង", table: "តុ", player: "អ្នកលេង", money: "ប្រាក់", 
+            chat: "ឆាត", deal: "ចែកបៀ", ready: "រួចរាល់", unready: "មិនទាន់រួចរាល់", 
+            reveal: "បើកបៀ", reset: "លេងថ្មី", trans: "ផ្ទេរប្រាក់", send: "បញ្ជូន", 
+            cancel: "បោះបង់", chatT: "ការពិភាក្សា", amtPh: "ចំនួនទឹកប្រាក់" 
+        },
+        en: { 
+            start: "START", table: "TABLE", player: "PLAYER", money: "MONEY", 
+            chat: "CHAT", deal: "DEAL", ready: "READY", unready: "UNREADY", 
+            reveal: "REVEAL", reset: "RESET", trans: "TRANSFER", send: "SEND", 
+            cancel: "CANCEL", chatT: "CHAT", amtPh: "Amount" 
+        },
+        cn: { 
+            start: "开始", table: "桌号", player: "玩家", money: "钱包", 
+            chat: "聊天", deal: "发牌", ready: "准备", unready: "未准备", 
+            reveal: "开牌", reset: "重置", trans: "转账", send: "发送", 
+            cancel: "取消", chatT: "聊天", amtPh: "金额" 
+        }
+    };
+
+    function applyTranslations() {
+        const d = dictionary[lang];
+        // Main UI
+        document.getElementById("btn-start").innerText = d.start;
+        document.getElementById("display-room").innerText = `${d.table}: ${room.toUpperCase()}`;
+        document.getElementById("display-name").innerText = `${d.player}: ${player.toUpperCase()}`;
+        document.getElementById("btn-money-ui").innerText = d.money;
+        document.getElementById("btn-chat-ui").innerHTML = `${d.chat} <div id="chat-dot"></div>`;
+        document.getElementById("dealBtn").innerText = d.deal;
+        document.getElementById("readyBtn").innerText = d.ready;
+        document.getElementById("notReadyBtn").innerText = d.unready;
+        document.getElementById("btn-reveal-ui").innerText = d.reveal;
+        document.getElementById("btn-reset-ui").innerText = d.reset;
+        
+        // Modal UI
+        document.getElementById("txt-trans-title").innerText = d.trans;
+        document.getElementById("transfer-amount").placeholder = d.amtPh;
+        document.getElementById("btn-send-money").innerText = d.send;
+        document.getElementById("btn-cancel-money").innerText = d.cancel;
+        document.getElementById("txt-chat-title").innerText = d.chatT;
+    }
+    
+    // ... (rest of your functions)
+</script>
 
 <div id="room-info-bar">
     <span id="display-room">តុ: -</span>
