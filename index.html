@@ -3,56 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Tos Leng - Pro Edition</title>
+    <title>Tos Leng - Universal Fix</title>
     <style>
         :root { --gold: #d4af37; --felt: #1a5e37; --wood: #3d2b1f; --red: #e74c3c; --safe-bottom: env(safe-area-inset-bottom); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: -apple-system, 'Kantumruy Pro', sans-serif; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: -apple-system, sans-serif; }
 
         /* Top Bar */
         #room-info-bar {
             position: fixed; top: 0; width: 100%; height: 44px; padding-top: env(safe-area-inset-top);
-            background: rgba(0,0,0,0.8); display: flex; justify-content: space-between;
+            background: rgba(0,0,0,0.9); display: flex; justify-content: space-between;
             align-items: center; padding-left: 20px; padding-right: 20px;
-            border-bottom: 1px solid #333; z-index: 1000; color: var(--gold); font-size: 12px;
+            border-bottom: 1px solid #444; z-index: 1000; color: var(--gold); font-size: 13px; font-weight: bold;
         }
 
         #game-wrapper { display: flex; flex-direction: column; height: 100dvh; width: 100vw; background: radial-gradient(circle, var(--felt) 0%, #0a2114 100%); }
         #poker-table { flex: 1; position: relative; margin: 60px 10px 10px 10px; border: 8px solid var(--wood); border-radius: 50px; box-shadow: inset 0 0 60px rgba(0,0,0,0.8); }
 
-        /* Player & Card Layout */
-        .player-spot { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; width: 130px; }
-        .player-badge { background: rgba(0,0,0,0.85); padding: 4px 8px; border-radius: 10px; border: 1px solid var(--gold); font-size: 10px; color: #fff; text-align: center; width: 100%; }
-        .player-money { color: #2ecc71; font-weight: bold; }
-        .money-negative { color: var(--red) !important; }
-        .is-ready { border-color: #2ecc71; box-shadow: 0 0 10px #2ecc71; }
+        /* Player UI */
+        .player-spot { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; width: 120px; }
+        .player-badge { background: rgba(0,0,0,0.85); padding: 5px; border-radius: 10px; border: 1px solid var(--gold); font-size: 10px; color: #fff; text-align: center; width: 100%; }
+        .money-text { color: #2ecc71; font-weight: bold; display: block; }
+        .is-ready { border-color: #2ecc71; background: #062b16; box-shadow: 0 0 10px #2ecc71; }
 
-        /* 2x3 Grid for Ang Du Rules */
-        .card-row { display: grid; grid-template-columns: repeat(3, 38px); grid-template-rows: repeat(2, 55px); gap: 4px; margin-top: 5px; }
-        .card-img { width: 38px; height: 55px; border-radius: 4px; background: white; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); transition: 0.2s; }
-        .card-img.active { border: 2.5px solid var(--gold); transform: translateY(-5px) scale(1.1); z-index: 10; }
+        /* Card Grid (Ang Du 2x3) */
+        .card-row { display: grid; grid-template-columns: repeat(3, 35px); grid-template-rows: repeat(2, 50px); gap: 4px; margin-top: 5px; }
+        .card-img { width: 35px; height: 50px; border-radius: 4px; background: white; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); border: 1px solid #ccc; }
+        .card-img.active { border: 3px solid var(--gold); transform: scale(1.15); z-index: 100; }
 
         /* Controls */
         .controls-bar { background: #111; border-top: 1px solid #333; display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 8px; padding: 10px 10px calc(var(--safe-bottom) + 10px); }
         .action-group { display: flex; flex-direction: column; gap: 6px; }
-        button { padding: 12px 0; border: none; border-radius: 10px; font-weight: 800; font-size: 11px; color: white; cursor: pointer; text-transform: uppercase; }
+        button { padding: 12px 0; border: none; border-radius: 10px; font-weight: 800; font-size: 10px; color: white; cursor: pointer; }
         .btn-gold { background: var(--gold); color: #000; }
         .btn-blue { background: #2980b9; }
         .btn-green { background: #27ae60; }
-        .btn-reveal { background: #d35400; }
-        .btn-reset { background: #c0392b; }
+        .btn-red { background: #c0392b; }
 
-        /* Overlays */
+        /* Chat Sidebar/Overlay */
+        #chat-panel { position: fixed; right: -300px; top: 0; width: 280px; height: 100%; background: rgba(0,0,0,0.95); border-left: 2px solid var(--gold); transition: 0.3s; z-index: 2000; display: flex; flex-direction: column; }
+        #chat-panel.open { right: 0; }
+        #chat-msgs { flex: 1; overflow-y: auto; padding: 10px; color: white; font-size: 13px; }
+        .chat-input-area { padding: 10px; display: flex; gap: 5px; background: #111; }
+
+        /* Login */
         #login-screen, .modal { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .login-input { width: 80%; max-width: 300px; padding: 14px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--gold); background: #111; color: white; text-align: center; font-size: 16px; }
-        select.login-input { background: var(--gold); color: black; font-weight: bold; }
-        #transfer-modal { display: none; background: rgba(0,0,0,0.9); z-index: 10001; }
+        .login-input { width: 80%; max-width: 300px; padding: 14px; margin-bottom: 10px; border-radius: 10px; border: 1px solid var(--gold); background: #111; color: white; text-align: center; }
     </style>
 </head>
 <body>
 
 <div id="login-screen">
-    <h1 style="color:var(--gold); margin-bottom:20px; letter-spacing: 2px;">TOS LENG</h1>
+    <h1 style="color:var(--gold)">TOS LENG</h1>
     <select id="langSelect" class="login-input" onchange="updateLangUI()">
         <option value="en">ENGLISH</option>
         <option value="kh">ភាសាខ្មែរ</option>
@@ -61,18 +63,16 @@
     <input id="roomInput" class="login-input" placeholder="ROOM NAME">
     <input id="passInput" class="login-input" type="password" placeholder="PASSWORD">
     <input id="nameInput" class="login-input" placeholder="YOUR NAME">
-    <input id="moneyInput" class="login-input" type="number" placeholder="START MONEY" value="50000">
-    <button onclick="join()" id="joinBtn" style="width:80%; max-width:300px; background:var(--gold); color:black; font-size:16px;">START GAME</button>
+    <input id="moneyInput" class="login-input" type="number" value="50000">
+    <button onclick="join()" id="joinBtn" class="btn-gold" style="width:80%; max-width:300px;">START</button>
 </div>
 
-<div id="transfer-modal" class="modal">
-    <h2 style="color:var(--gold)" id="txt-transfer-title">TRANSFER</h2>
+<div id="transfer-modal" class="modal" style="display:none;">
+    <h2 style="color:var(--gold)" id="txt-trans-title">TRANSFER</h2>
     <select id="transfer-to" class="login-input"></select>
     <input id="transfer-amount" class="login-input" type="number" placeholder="Amount">
-    <div style="display:flex; gap:10px; width:80%; max-width:300px;">
-        <button onclick="confirmTransfer()" class="btn-green" style="flex:1">SEND</button>
-        <button onclick="closeTransfer()" class="btn-reset" style="flex:1">CANCEL</button>
-    </div>
+    <button onclick="confirmTransfer()" class="btn-green" style="width:80%; margin-bottom:10px;">SEND</button>
+    <button onclick="document.getElementById('transfer-modal').style.display='none'" class="btn-red" style="width:80%;">CANCEL</button>
 </div>
 
 <div id="room-info-bar">
@@ -84,24 +84,33 @@
     <div id="poker-table"></div>
     <div class="controls-bar">
         <div class="action-group">
-            <button class="btn-gold" onclick="openTransfer()" id="btn-transfer">TRANSFER</button>
-            <button class="btn-gold" onclick="alert('Chat coming soon!')" id="btn-chat">CHAT</button>
+            <button class="btn-gold" onclick="openTransfer()">MONEY</button>
+            <button class="btn-gold" onclick="document.getElementById('chat-panel').classList.toggle('open')">CHAT</button>
         </div>
         <div class="action-group">
             <button id="dealBtn" class="btn-blue" onclick="deal()">DEAL</button>
             <button id="readyBtn" class="btn-green" style="display:none;" onclick="toggleReady(true)">READY</button>
-            <button id="notReadyBtn" class="btn-reset" style="display:none;" onclick="toggleReady(false)">UNREADY</button>
+            <button id="notReadyBtn" class="btn-red" style="display:none;" onclick="toggleReady(false)">UNREADY</button>
         </div>
         <div class="action-group">
-            <button class="btn-reveal" onclick="reveal()" id="btn-reveal">REVEAL</button>
-            <button class="btn-reset" onclick="resetGame()" id="btn-reset">RESET</button>
+            <button class="btn-gold" style="background:#d35400" onclick="reveal()">REVEAL</button>
+            <button class="btn-red" onclick="resetGame()">RESET</button>
         </div>
+    </div>
+</div>
+
+<div id="chat-panel">
+    <div style="padding:15px; color:var(--gold); font-weight:bold; border-bottom:1px solid #333;">CHAT</div>
+    <div id="chat-msgs"></div>
+    <div class="chat-input-area">
+        <input id="chatInp" style="flex:1; padding:8px; border-radius:5px; border:none;" placeholder="...">
+        <button onclick="sendChat()" class="btn-gold" style="padding:5px 10px;">SEND</button>
     </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, update, onValue, get, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, set, update, onValue, get, push, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBjsVUxlNjGUnYioHOlKmk1wEMoVTSVxLw",
@@ -112,54 +121,45 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    let room, player, pass, startMoney;
+    let room, player, startMoney;
     let selectedIdx = null;
 
     const langData = {
-        en: { join: "START GAME", table: "TABLE", player: "PLAYER", deal: "DEAL", ready: "READY", unready: "UNREADY", reveal: "REVEAL", reset: "RESET", chat: "CHAT", transfer: "TRANSFER", transTitle: "TRANSFER MONEY", placeholderName: "YOUR NAME", placeholderRoom: "ROOM NAME" },
-        kh: { join: "ចាប់ផ្ដើមហ្គេម", table: "តុ", player: "អ្នកលេង", deal: "ចែកបៀ", ready: "រួចរាល់", unready: "មិនទាន់រួចរាល់", reveal: "បើកបៀ", reset: "លេងថ្មី", chat: "ឆាត", transfer: "ផ្ទេរប្រាក់", transTitle: "ផ្ទេរប្រាក់ទៅកាន់", placeholderName: "ឈ្មោះរបស់អ្នក", placeholderRoom: "ឈ្មោះបន្ទប់" },
-        cn: { join: "开始游戏", table: "桌号", player: "玩家", deal: "发牌", ready: "准备", unready: "取消准备", reveal: "开牌", reset: "重置", chat: "聊天", transfer: "转账", transTitle: "转账金额", placeholderName: "你的名字", placeholderRoom: "房间名" }
-    };
-
-    window.updateLangUI = function() {
-        const l = langData[document.getElementById("langSelect").value];
-        document.getElementById("joinBtn").innerText = l.join;
-        document.getElementById("roomInput").placeholder = l.placeholderRoom;
-        document.getElementById("nameInput").placeholder = l.placeholderName;
-        document.getElementById("dealBtn").innerText = l.deal;
-        document.getElementById("readyBtn").innerText = l.ready;
-        document.getElementById("notReadyBtn").innerText = l.unready;
-        document.getElementById("btn-reveal").innerText = l.reveal;
-        document.getElementById("btn-reset").innerText = l.reset;
-        document.getElementById("btn-chat").innerText = l.chat;
-        document.getElementById("btn-transfer").innerText = l.transfer;
-        document.getElementById("txt-transfer-title").innerText = l.transTitle;
+        en: { table: "TABLE", player: "PLAYER", trans: "TRANSFER" },
+        kh: { table: "តុ", player: "អ្នកលេង", trans: "ផ្ទេរប្រាក់" },
+        cn: { table: "桌号", player: "玩家", trans: "转账" }
     };
 
     window.join = function() {
         room = document.getElementById("roomInput").value.trim().toLowerCase();
         player = document.getElementById("nameInput").value.trim();
-        pass = document.getElementById("passInput").value.trim();
         startMoney = parseInt(document.getElementById("moneyInput").value) || 50000;
-        if(!room || !player) return alert("Fill all fields");
+        
+        if(!room || !player) return alert("Missing Info");
 
-        get(ref(db, `rooms/${room}/config`)).then(snap => {
-            const config = snap.val();
-            if(config && config.pass !== pass) return alert("Wrong Password!");
-            if(!config) set(ref(db, `rooms/${room}/config`), {pass: pass});
-            set(ref(db, `rooms/${room}/wallets/${player}`), startMoney);
-            document.getElementById("login-screen").style.display = "none";
-            listen();
-        });
+        set(ref(db, `rooms/${room}/wallets/${player}`), startMoney);
+        
+        document.getElementById("login-screen").style.display = "none";
+        updateLangUI();
+        listen();
+        listenChat();
+    };
+
+    window.updateLangUI = function() {
+        if(!room) return;
+        const l = langData[document.getElementById("langSelect").value];
+        document.getElementById("display-room").innerText = l.table + ": " + room.toUpperCase();
+        document.getElementById("display-name").innerText = l.player + ": " + player.toUpperCase();
     };
 
     function listen() {
         onValue(ref(db, `rooms/${room}`), snap => {
-            const data = snap.val();
+            const data = snap.val() || {};
             const table = document.getElementById("poker-table");
-            table.innerHTML = ""; if(!data) return;
-
-            const players = data.wallets ? Object.keys(data.wallets) : [];
+            table.innerHTML = "";
+            
+            const wallets = data.wallets || {};
+            const players = Object.keys(wallets);
             const myCards = (data.players && data.players[player]) ? data.players[player] : null;
             const amIReady = (data.readyStatus && data.readyStatus[player]);
 
@@ -168,9 +168,8 @@
             document.getElementById("notReadyBtn").style.display = amIReady ? "block" : "none";
 
             players.forEach((p, i) => {
-                const angle = (i * (360 / players.length)) * (Math.PI / 180);
                 const isPReady = (data.readyStatus && data.readyStatus[p]);
-                const money = data.wallets[p] || 0;
+                const angle = (i * (360 / players.length)) * (Math.PI / 180);
                 
                 const spot = document.createElement("div");
                 spot.className = "player-spot";
@@ -179,8 +178,8 @@
 
                 const badge = document.createElement("div");
                 badge.className = "player-badge" + (isPReady ? " is-ready" : "");
-                badge.innerHTML = `<div>${p === player ? "YOU" : p} ${isPReady ? "✅" : ""}</div>
-                                   <div class="player-money ${money < 0 ? 'money-negative' : ''}">${money.toLocaleString()}៛</div>`;
+                badge.innerHTML = `<b>${p === player ? "YOU" : p} ${isPReady ? "✅" : ""}</b>
+                                   <span class="money-text">${(wallets[p]||0).toLocaleString()}</span>`;
                 
                 const cardsDiv = document.createElement("div");
                 cardsDiv.className = "card-row";
@@ -188,14 +187,12 @@
                 if (data.players && data.players[p]) {
                     data.players[p].forEach((c, idx) => {
                         const img = document.createElement("img");
-                        img.className = "card-img";
-                        if(selectedIdx === idx && p === player) img.classList.add("active");
+                        img.className = "card-img" + (selectedIdx === idx && p === player ? " active" : "");
                         img.src = (p === player || c.faceUp) ? getCardImg(c.val) : "https://deckofcardsapi.com/static/img/back.png";
                         
-                        // Swap Logic restored for Tos Leng / Ang Du
                         if(p === player && !amIReady && !c.faceUp) {
                             img.onclick = () => {
-                                if(selectedIdx === null) { selectedIdx = idx; listen(); } 
+                                if(selectedIdx === null) { selectedIdx = idx; listen(); }
                                 else { swapCards(selectedIdx, idx); selectedIdx = null; }
                             };
                         }
@@ -212,36 +209,53 @@
         const snap = await get(pRef);
         let c = snap.val(); if(!c) return;
         [c[a], c[b]] = [c[b], c[a]];
-        set(pRef, c);
+        await set(pRef, c);
     }
 
     window.openTransfer = () => {
-        const modal = document.getElementById("transfer-modal");
-        const select = document.getElementById("transfer-to");
-        select.innerHTML = "";
+        const sel = document.getElementById("transfer-to");
+        sel.innerHTML = "";
         get(ref(db, `rooms/${room}/wallets`)).then(snap => {
             const users = snap.val();
             for(let u in users) if(u !== player) {
-                let opt = document.createElement("option"); opt.value = u; opt.innerText = u;
-                select.appendChild(opt);
+                let o = document.createElement("option"); o.value = u; o.innerText = u;
+                sel.appendChild(o);
             }
-            modal.style.display = "flex";
+            document.getElementById("transfer-modal").style.display = "flex";
         });
     };
 
-    window.closeTransfer = () => document.getElementById("transfer-modal").style.display = "none";
-
     window.confirmTransfer = () => {
-        const toPlayer = document.getElementById("transfer-to").value;
-        const amount = parseInt(document.getElementById("transfer-amount").value);
-        if(!toPlayer || !amount || amount <= 0) return;
-        runTransaction(ref(db, `rooms/${room}/wallets/${player}`), c => (c || 0) - amount);
-        runTransaction(ref(db, `rooms/${room}/wallets/${toPlayer}`), c => (c || 0) + amount);
-        closeTransfer();
+        const to = document.getElementById("transfer-to").value;
+        const amt = parseInt(document.getElementById("transfer-amount").value);
+        if(!to || !amt) return;
+        runTransaction(ref(db, `rooms/${room}/wallets/${player}`), c => (c || 0) - amt);
+        runTransaction(ref(db, `rooms/${room}/wallets/${to}`), c => (c || 0) + amt);
+        document.getElementById("transfer-modal").style.display = "none";
     };
 
+    window.sendChat = () => {
+        const inp = document.getElementById("chatInp");
+        if(!inp.value.trim()) return;
+        push(ref(db, `rooms/${room}/chats`), { u: player, m: inp.value });
+        inp.value = "";
+    };
+
+    function listenChat() {
+        onValue(ref(db, `rooms/${room}/chats`), snap => {
+            const area = document.getElementById("chat-msgs");
+            area.innerHTML = "";
+            const data = snap.val();
+            if(data) Object.values(data).forEach(c => {
+                let d = document.createElement("div");
+                d.innerHTML = `<span style="color:var(--gold)">${c.u}:</span> ${c.m}`;
+                area.appendChild(d);
+            });
+            area.scrollTop = area.scrollHeight;
+        });
+    }
+
     const getCardImg = (v) => {
-        if(!v) return "https://deckofcardsapi.com/static/img/back.png";
         const suitMap = {"♠":"S","♥":"H","♦":"D","♣":"C"};
         let val = v.replace(/[♠♥♦♣]/g, ''); if(val === "10") val = "0";
         return `https://deckofcardsapi.com/static/img/${val}${suitMap[v.slice(-1)]}.png`;
@@ -257,16 +271,15 @@
 
     window.reveal = () => {
         get(ref(db, `rooms/${room}/players`)).then(snap => {
-            let data = snap.val(); if(!data) return;
-            let updates = {};
-            for(let p in data) data[p].forEach((c,i)=> { updates[`rooms/${room}/players/${p}/${i}/faceUp`] = true; });
-            update(ref(db), updates);
+            let d = snap.val(); if(!d) return;
+            let up = {};
+            for(let p in d) d[p].forEach((c,i)=> { up[`rooms/${room}/players/${p}/${i}/faceUp`] = true; });
+            update(ref(db), up);
         });
     };
 
-    window.resetGame = () => { if(confirm("New Round?")) { set(ref(db, `rooms/${room}/players`), null); set(ref(db, `rooms/${room}/readyStatus`), null); } };
+    window.resetGame = () => { if(confirm("Next Round?")) { set(ref(db, `rooms/${room}/players`), null); set(ref(db, `rooms/${room}/readyStatus`), null); } };
     window.toggleReady = (s) => set(ref(db, `rooms/${room}/readyStatus/${player}`), s);
-    window.updateLangUI();
 </script>
 </body>
 </html>
