@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Tos Leng - Universal Fix</title>
+    <title>Tos Leng - Final Fix</title>
     <style>
         :root { --gold: #d4af37; --felt: #1a5e37; --wood: #3d2b1f; --red: #e74c3c; --safe-bottom: env(safe-area-inset-bottom); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: -apple-system, sans-serif; }
 
-        /* Top Bar */
         #room-info-bar {
             position: fixed; top: 0; width: 100%; height: 44px; padding-top: env(safe-area-inset-top);
             background: rgba(0,0,0,0.9); display: flex; justify-content: space-between;
@@ -20,18 +19,15 @@
         #game-wrapper { display: flex; flex-direction: column; height: 100dvh; width: 100vw; background: radial-gradient(circle, var(--felt) 0%, #0a2114 100%); }
         #poker-table { flex: 1; position: relative; margin: 60px 10px 10px 10px; border: 8px solid var(--wood); border-radius: 50px; box-shadow: inset 0 0 60px rgba(0,0,0,0.8); }
 
-        /* Player UI */
         .player-spot { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; width: 120px; }
         .player-badge { background: rgba(0,0,0,0.85); padding: 5px; border-radius: 10px; border: 1px solid var(--gold); font-size: 10px; color: #fff; text-align: center; width: 100%; }
         .money-text { color: #2ecc71; font-weight: bold; display: block; }
         .is-ready { border-color: #2ecc71; background: #062b16; box-shadow: 0 0 10px #2ecc71; }
 
-        /* Card Grid (Ang Du 2x3) */
         .card-row { display: grid; grid-template-columns: repeat(3, 35px); grid-template-rows: repeat(2, 50px); gap: 4px; margin-top: 5px; }
         .card-img { width: 35px; height: 50px; border-radius: 4px; background: white; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); border: 1px solid #ccc; }
         .card-img.active { border: 3px solid var(--gold); transform: scale(1.15); z-index: 100; }
 
-        /* Controls */
         .controls-bar { background: #111; border-top: 1px solid #333; display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 8px; padding: 10px 10px calc(var(--safe-bottom) + 10px); }
         .action-group { display: flex; flex-direction: column; gap: 6px; }
         button { padding: 12px 0; border: none; border-radius: 10px; font-weight: 800; font-size: 10px; color: white; cursor: pointer; }
@@ -40,13 +36,12 @@
         .btn-green { background: #27ae60; }
         .btn-red { background: #c0392b; }
 
-        /* Chat Sidebar/Overlay */
-        #chat-panel { position: fixed; right: -300px; top: 0; width: 280px; height: 100%; background: rgba(0,0,0,0.95); border-left: 2px solid var(--gold); transition: 0.3s; z-index: 2000; display: flex; flex-direction: column; }
+        /* Chat Panel - Fixed for PC/Phone */
+        #chat-panel { position: fixed; right: -300px; top: 0; width: 280px; height: 100%; background: rgba(10,10,10,0.98); border-left: 2px solid var(--gold); transition: 0.3s; z-index: 2000; display: flex; flex-direction: column; }
         #chat-panel.open { right: 0; }
-        #chat-msgs { flex: 1; overflow-y: auto; padding: 10px; color: white; font-size: 13px; }
-        .chat-input-area { padding: 10px; display: flex; gap: 5px; background: #111; }
+        #chat-msgs { flex: 1; overflow-y: auto; padding: 15px; color: white; font-size: 13px; line-height: 1.5; }
+        .chat-input-area { padding: 15px; display: flex; gap: 8px; background: #000; border-top: 1px solid #333; }
 
-        /* Login */
         #login-screen, .modal { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .login-input { width: 80%; max-width: 300px; padding: 14px; margin-bottom: 10px; border-radius: 10px; border: 1px solid var(--gold); background: #111; color: white; text-align: center; }
     </style>
@@ -54,7 +49,7 @@
 <body>
 
 <div id="login-screen">
-    <h1 style="color:var(--gold)">TOS LENG</h1>
+    <h1 style="color:var(--gold); letter-spacing:3px;">TOS LENG</h1>
     <select id="langSelect" class="login-input" onchange="updateLangUI()">
         <option value="en">ENGLISH</option>
         <option value="kh">ភាសាខ្មែរ</option>
@@ -64,11 +59,11 @@
     <input id="passInput" class="login-input" type="password" placeholder="PASSWORD">
     <input id="nameInput" class="login-input" placeholder="YOUR NAME">
     <input id="moneyInput" class="login-input" type="number" value="50000">
-    <button onclick="join()" id="joinBtn" class="btn-gold" style="width:80%; max-width:300px;">START</button>
+    <button onclick="join()" id="joinBtn" class="btn-gold" style="width:80%; max-width:300px; font-size:16px;">START</button>
 </div>
 
 <div id="transfer-modal" class="modal" style="display:none;">
-    <h2 style="color:var(--gold)" id="txt-trans-title">TRANSFER</h2>
+    <h2 style="color:var(--gold)">TRANSFER</h2>
     <select id="transfer-to" class="login-input"></select>
     <input id="transfer-amount" class="login-input" type="number" placeholder="Amount">
     <button onclick="confirmTransfer()" class="btn-green" style="width:80%; margin-bottom:10px;">SEND</button>
@@ -85,7 +80,7 @@
     <div class="controls-bar">
         <div class="action-group">
             <button class="btn-gold" onclick="openTransfer()">MONEY</button>
-            <button class="btn-gold" onclick="document.getElementById('chat-panel').classList.toggle('open')">CHAT</button>
+            <button class="btn-gold" onclick="document.getElementById('chat-panel').classList.add('open')">CHAT</button>
         </div>
         <div class="action-group">
             <button id="dealBtn" class="btn-blue" onclick="deal()">DEAL</button>
@@ -100,11 +95,14 @@
 </div>
 
 <div id="chat-panel">
-    <div style="padding:15px; color:var(--gold); font-weight:bold; border-bottom:1px solid #333;">CHAT</div>
+    <div style="padding:15px; color:var(--gold); font-weight:bold; display:flex; justify-content:space-between; align-items:center; background:#111;">
+        <span>CHAT</span>
+        <span style="cursor:pointer; padding:5px;" onclick="document.getElementById('chat-panel').classList.remove('open')">✖</span>
+    </div>
     <div id="chat-msgs"></div>
     <div class="chat-input-area">
-        <input id="chatInp" style="flex:1; padding:8px; border-radius:5px; border:none;" placeholder="...">
-        <button onclick="sendChat()" class="btn-gold" style="padding:5px 10px;">SEND</button>
+        <input id="chatInp" style="flex:1; padding:10px; border-radius:8px; border:none; background:#222; color:white;" placeholder="Type here..." onkeypress="if(event.key==='Enter') sendChat()">
+        <button onclick="sendChat()" class="btn-gold" style="padding:5px 12px; height:40px;">SEND</button>
     </div>
 </div>
 
@@ -124,32 +122,25 @@
     let room, player, startMoney;
     let selectedIdx = null;
 
-    const langData = {
-        en: { table: "TABLE", player: "PLAYER", trans: "TRANSFER" },
-        kh: { table: "តុ", player: "អ្នកលេង", trans: "ផ្ទេរប្រាក់" },
-        cn: { table: "桌号", player: "玩家", trans: "转账" }
-    };
-
     window.join = function() {
         room = document.getElementById("roomInput").value.trim().toLowerCase();
         player = document.getElementById("nameInput").value.trim();
         startMoney = parseInt(document.getElementById("moneyInput").value) || 50000;
         
-        if(!room || !player) return alert("Missing Info");
+        if(!room || !player) return alert("Please enter Room and Name");
 
         set(ref(db, `rooms/${room}/wallets/${player}`), startMoney);
-        
         document.getElementById("login-screen").style.display = "none";
-        updateLangUI();
+        
+        // Immediate UI Update
+        const lData = { en: "TABLE", kh: "តុ", cn: "桌号" };
+        const pData = { en: "PLAYER", kh: "អ្នកលេង", cn: "玩家" };
+        const lang = document.getElementById("langSelect").value;
+        document.getElementById("display-room").innerText = `${lData[lang]}: ${room.toUpperCase()}`;
+        document.getElementById("display-name").innerText = `${pData[lang]}: ${player.toUpperCase()}`;
+
         listen();
         listenChat();
-    };
-
-    window.updateLangUI = function() {
-        if(!room) return;
-        const l = langData[document.getElementById("langSelect").value];
-        document.getElementById("display-room").innerText = l.table + ": " + room.toUpperCase();
-        document.getElementById("display-name").innerText = l.player + ": " + player.toUpperCase();
     };
 
     function listen() {
@@ -170,7 +161,6 @@
             players.forEach((p, i) => {
                 const isPReady = (data.readyStatus && data.readyStatus[p]);
                 const angle = (i * (360 / players.length)) * (Math.PI / 180);
-                
                 const spot = document.createElement("div");
                 spot.className = "player-spot";
                 spot.style.left = (50 + 35 * Math.cos(angle)) + "%";
@@ -179,7 +169,7 @@
                 const badge = document.createElement("div");
                 badge.className = "player-badge" + (isPReady ? " is-ready" : "");
                 badge.innerHTML = `<b>${p === player ? "YOU" : p} ${isPReady ? "✅" : ""}</b>
-                                   <span class="money-text">${(wallets[p]||0).toLocaleString()}</span>`;
+                                   <span class="money-text">${(wallets[p]||0).toLocaleString()}៛</span>`;
                 
                 const cardsDiv = document.createElement("div");
                 cardsDiv.className = "card-row";
@@ -212,6 +202,37 @@
         await set(pRef, c);
     }
 
+    window.sendChat = () => {
+        const inp = document.getElementById("chatInp");
+        const msg = inp.value.trim();
+        if(!msg) return;
+        // Using push() ensures a unique ID for every message
+        push(ref(db, `rooms/${room}/chats`), {
+            u: player,
+            m: msg,
+            t: Date.now()
+        });
+        inp.value = "";
+    };
+
+    function listenChat() {
+        onValue(ref(db, `rooms/${room}/chats`), snap => {
+            const area = document.getElementById("chat-msgs");
+            area.innerHTML = "";
+            const data = snap.val();
+            if(data) {
+                // Sort by time to make sure they appear in order
+                Object.values(data).sort((a,b) => a.t - b.t).forEach(c => {
+                    let d = document.createElement("div");
+                    d.style.marginBottom = "8px";
+                    d.innerHTML = `<span style="color:var(--gold); font-weight:bold;">${c.u}:</span> <span style="color:#eee;">${c.m}</span>`;
+                    area.appendChild(d);
+                });
+            }
+            area.scrollTop = area.scrollHeight;
+        });
+    }
+
     window.openTransfer = () => {
         const sel = document.getElementById("transfer-to");
         sel.innerHTML = "";
@@ -233,27 +254,6 @@
         runTransaction(ref(db, `rooms/${room}/wallets/${to}`), c => (c || 0) + amt);
         document.getElementById("transfer-modal").style.display = "none";
     };
-
-    window.sendChat = () => {
-        const inp = document.getElementById("chatInp");
-        if(!inp.value.trim()) return;
-        push(ref(db, `rooms/${room}/chats`), { u: player, m: inp.value });
-        inp.value = "";
-    };
-
-    function listenChat() {
-        onValue(ref(db, `rooms/${room}/chats`), snap => {
-            const area = document.getElementById("chat-msgs");
-            area.innerHTML = "";
-            const data = snap.val();
-            if(data) Object.values(data).forEach(c => {
-                let d = document.createElement("div");
-                d.innerHTML = `<span style="color:var(--gold)">${c.u}:</span> ${c.m}`;
-                area.appendChild(d);
-            });
-            area.scrollTop = area.scrollHeight;
-        });
-    }
 
     const getCardImg = (v) => {
         const suitMap = {"♠":"S","♥":"H","♦":"D","♣":"C"};
@@ -278,7 +278,7 @@
         });
     };
 
-    window.resetGame = () => { if(confirm("Next Round?")) { set(ref(db, `rooms/${room}/players`), null); set(ref(db, `rooms/${room}/readyStatus`), null); } };
+    window.resetGame = () => { if(confirm("Start new round?")) { set(ref(db, `rooms/${room}/players`), null); set(ref(db, `rooms/${room}/readyStatus`), null); } };
     window.toggleReady = (s) => set(ref(db, `rooms/${room}/readyStatus/${player}`), s);
 </script>
 </body>
