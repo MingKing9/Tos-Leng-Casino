@@ -2,76 +2,95 @@
 <html lang="km">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tos Leng - Mobile</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Tos Leng - Classic Pro</title>
     <style>
-        :root { --gold: #d4af37; --felt: #1a5e37; --wood: #3d2b1f; }
-        body { margin: 0; background: #000; color: white; font-family: sans-serif; overflow: hidden; }
+        :root { --gold: #d4af37; --felt: #1a5e37; --wood: #3d2b1f; --safe-bottom: env(safe-area-inset-bottom); }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: -apple-system, sans-serif; }
+
+        /* Elegant Top Bar */
+        #room-info-bar {
+            position: fixed; top: 0; width: 100%; height: 44px;
+            padding-top: env(safe-area-inset-top);
+            background: rgba(0,0,0,0.8); display: flex; justify-content: space-between;
+            align-items: center; padding-left: 20px; padding-right: 20px;
+            border-bottom: 1px solid #333; z-index: 1000; color: var(--gold);
+            font-size: 13px; font-weight: 600;
+        }
+
+        #game-wrapper { display: flex; flex-direction: column; height: 100dvh; width: 100vw; background: radial-gradient(circle, var(--felt) 0%, #0a2114 100%); }
+        #poker-table { flex: 1; position: relative; margin: 60px 10px 10px 10px; border: 10px solid var(--wood); border-radius: 50px; box-shadow: inset 0 0 60px rgba(0,0,0,0.8), 0 10px 30px rgba(0,0,0,0.5); }
+
+        .player-spot { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; width: 140px; }
+        .player-badge { background: rgba(0,0,0,0.8); padding: 5px 12px; border-radius: 12px; border: 1px solid var(--gold); font-size: 11px; color: #fff; font-weight: 700; }
+        .player-badge.is-ready { background: #27ae60; border-color: #fff; box-shadow: 0 0 12px #2ecc71; }
         
-        #login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; padding: 20px; }
-        .login-input { width: 100%; max-width: 300px; padding: 15px; margin: 10px 0; border-radius: 8px; border: 1px solid var(--gold); background: #222; color: white; text-align: center; }
+        .card-row { display: grid; grid-template-columns: repeat(3, 42px); grid-template-rows: repeat(2, 60px); justify-content: center; gap: 4px; margin-top: 5px; }
+        .card-img { width: 42px; height: 60px; border-radius: 4px; transition: transform 0.2s; background: white; box-shadow: 2px 2px 8px rgba(0,0,0,0.5); }
+        .card-img.active { transform: translateY(-15px) scale(1.1); border: 2.5px solid var(--gold); z-index: 100; box-shadow: 0 0 15px var(--gold); }
+
+        .controls-bar { background: #111; border-top: 1px solid #333; display: grid; grid-template-columns: 1fr 1.5fr 1fr; gap: 8px; padding: 12px 12px calc(var(--safe-bottom) + 12px) 12px; }
+        .action-group { display: flex; flex-direction: column; gap: 6px; }
+
+        button { padding: 14px 0; border: none; border-radius: 12px; font-weight: 800; font-size: 11px; color: white; text-transform: uppercase; cursor: pointer; }
+        .btn-gold { background: var(--gold); color: #000; }
+        .btn-blue { background: #2980b9; }
+        .btn-green { background: #27ae60; }
+        .btn-grey { background: #444; }
+        .btn-reveal { background: #d35400; }
+        .btn-reset { background: #c0392b; }
+
+        #chat-box { position: fixed; bottom: -450px; left: 0; width: 100%; height: 400px; background: rgba(15, 15, 15, 0.98); border-top: 2px solid var(--gold); transition: bottom 0.3s ease; z-index: 2000; display: flex; flex-direction: column; border-radius: 25px 25px 0 0; }
+        #chat-box.open { bottom: 0; }
+        #chat-messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; }
+        .msg { background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 15px; color: white; font-size: 14px; width: fit-content; max-width: 85%; }
+        .msg-own { align-self: flex-end; background: var(--gold); color: #000; font-weight: 700; }
+
+        #login-screen { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .login-input { width: 85%; max-width: 320px; padding: 16px; margin-bottom: 12px; border-radius: 12px; border: 1px solid var(--gold); background: #111; color: white; font-size: 16px; text-align: center; }
         
-        #lang-toggle { position: absolute; top: 20px; right: 20px; background: #333; color: var(--gold); border: 1px solid var(--gold); padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        
-        #game-area { display: none; height: 100vh; display: flex; flex-direction: column; }
-        #poker-table { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 20px; background: var(--felt); overflow-y: auto; }
-        
-        .player-spot { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid var(--gold); }
-        .card-row { display: flex; justify-content: center; gap: 5px; margin-top: 8px; }
-        .card-img { width: 35px; height: 50px; background: white; border-radius: 3px; }
-        
-        .controls { padding: 15px; background: #111; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        button { padding: 12px; border: none; border-radius: 8px; background: var(--gold); color: black; font-weight: bold; cursor: pointer; }
+        #lang-btn { position: absolute; top: 10px; right: 10px; background: #222; border: 1px solid var(--gold); color: var(--gold); padding: 5px 10px; border-radius: 8px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<button id="lang-toggle" onclick="cycleLanguage()">🇰🇭 KM</button>
-
 <div id="login-screen">
-    <h1 id="txt-title" style="color:var(--gold)">TOS LENG</h1>
-    <input id="roomInput" class="login-input" placeholder="Room Name">
-    <input id="passInput" class="login-input" type="password" placeholder="Password">
-    <input id="nameInput" class="login-input" placeholder="Your Name">
-    <button onclick="join()" id="btn-join" style="width:300px; padding:15px; background:var(--gold);">JOIN</button>
+    <button id="lang-btn" onclick="cycleLang()">🇰🇭 KM</button>
+    <h1 id="txt-title" style="color:var(--gold); margin-bottom:30px; letter-spacing: 2px;">TOS LENG</h1>
+    <input id="roomInput" class="login-input" placeholder="ROOM NAME">
+    <input id="passInput" class="login-input" type="password" placeholder="PASSWORD">
+    <input id="nameInput" class="login-input" placeholder="YOUR NAME">
+    <button id="btn-start" onclick="join()" style="width:85%; max-width:320px; background:var(--gold); color:black; font-size:16px;">START GAME</button>
 </div>
 
-<div id="game-area">
-    <div id="poker-table">
-        </div>
-    <div class="controls">
-        <button onclick="deal()" id="btn-deal">DEAL</button>
-        <button onclick="reveal()" id="btn-reveal">REVEAL</button>
-    </div>
+<div id="room-info-bar">
+    <span id="display-room">TABLE: -</span>
+    <span id="lang-display" onclick="cycleLang()" style="cursor:pointer; color:var(--gold);">🇰🇭 KM</span>
+    <span id="display-name">PLAYER: -</span>
 </div>
 
-<script>
-    const languages = ['km', 'en', 'cn', 'jp'];
-    let langIndex = 0;
-    const langData = {
-        km: { title: "ទាស់លេង", room: "ឈ្មោះបន្ទប់", pass: "លេខកូដ", name: "ឈ្មោះ", btn: "ចូលលេង", flag: "🇰🇭 KM", deal: "ចែកបៀ", reveal: "បើកបៀ" },
-        en: { title: "TOS LENG", room: "Room Name", pass: "Password", name: "Your Name", btn: "JOIN", flag: "🇺🇸 EN", deal: "DEAL", reveal: "REVEAL" },
-        cn: { title: "讨冷", room: "房间名称", pass: "密码", name: "名字", btn: "进入", flag: "🇨🇳 CN", deal: "发牌", reveal: "摊牌" },
-        jp: { title: "トスレン", room: "ルーム名", pass: "パスワード", name: "お名前", btn: "参加", flag: "🇯🇵 JP", deal: "配る", reveal: "公開" }
+<script type="module">
+    // ... (Your existing Firebase code) ...
+    
+    const langs = {
+        km: { title: "ទាស់លេង", room: "ឈ្មោះបន្ទប់", pass: "លេខកូដ", name: "ឈ្មោះ", start: "ចាប់ផ្តើមលេង", chat: "ជជែក", deal: "ចែកបៀ", ready: "រួចរាល់", unready: "មិនទាន់រួចរាល់", reveal: "បើកបៀ", reset: "លេងថ្មី", close: "បិទ", send: "ផ្ញើ", flag: "🇰🇭 KM" },
+        en: { title: "TOS LENG", room: "ROOM NAME", pass: "PASSWORD", name: "YOUR NAME", start: "START GAME", chat: "CHAT", deal: "DEAL HAND", ready: "I'M READY", unready: "UNREADY", reveal: "REVEAL", reset: "RESET", close: "CLOSE", send: "SEND", flag: "🇺🇸 EN" },
+        cn: { title: "讨冷", room: "房间名称", pass: "密码", name: "你的名字", start: "开始游戏", chat: "聊天", deal: "发牌", ready: "准备", unready: "取消", reveal: "摊牌", reset: "重置", close: "关闭", send: "发送", flag: "🇨🇳 CN" },
+        jp: { title: "トスレン", room: "ルーム名", pass: "パスワード", name: "お名前", start: "開始", chat: "チャット", deal: "配る", ready: "準備完了", unready: "未準備", reveal: "公開", reset: "リセット", close: "閉じる", send: "送信", flag: "🇯🇵 JP" }
     };
-
-    function cycleLanguage() {
-        langIndex = (langIndex + 1) % languages.length;
-        const l = langData[languages[langIndex]];
-        document.getElementById("lang-toggle").innerText = l.flag;
+    
+    let lang = 'en';
+    window.cycleLang = () => {
+        const keys = Object.keys(langs);
+        lang = keys[(keys.indexOf(lang) + 1) % keys.length];
+        const l = langs[lang];
         document.getElementById("txt-title").innerText = l.title;
-        document.getElementById("roomInput").placeholder = l.room;
-        document.getElementById("passInput").placeholder = l.pass;
-        document.getElementById("nameInput").placeholder = l.name;
-        document.getElementById("btn-join").innerText = l.btn;
-        document.getElementById("btn-deal").innerText = l.deal;
-        document.getElementById("btn-reveal").innerText = l.reveal;
-    }
-
-    function join() {
-        document.getElementById("login-screen").style.display = "none";
-        document.getElementById("game-area").style.display = "flex";
-    }
+        document.getElementById("btn-start").innerText = l.start;
+        document.getElementById("lang-btn").innerText = l.flag;
+        document.getElementById("lang-display").innerText = l.flag;
+        // Add more logic here to update all other buttons dynamically
+    };
 </script>
 </body>
 </html>
