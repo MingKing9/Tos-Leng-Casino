@@ -139,31 +139,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, update, onValue, get, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // --- LANGUAGE SYSTEM ---
-    const t = {
-        km: { title: "ទាស់លេង", start: "ចូលលេង", chat: "ជជែក", deal: "ចែកបៀ", ready: "រួចរាល់", unready: "មិនទាន់", reveal: "បើកបៀ", reset: "លេងសារថ្មី", close: "បិទ", send: "ផ្ញើ", flag: "🇰🇭 KM" },
-        en: { title: "TOS LENG", start: "START GAME", chat: "CHAT", deal: "DEAL", ready: "READY", unready: "UNREADY", reveal: "REVEAL", reset: "RESET", close: "CLOSE", send: "SEND", flag: "🇺🇸 EN" },
-        cn: { title: "讨冷", start: "开始游戏", chat: "聊天", deal: "发牌", ready: "准备", unready: "取消", reveal: "摊牌", reset: "重置", close: "关闭", send: "发送", flag: "🇨🇳 CN" },
-        jp: { title: "トスレン", start: "参加", chat: "チャット", deal: "配る", ready: "準備完了", unready: "未準備", reveal: "公開", reset: "リセット", close: "閉じる", send: "送信", flag: "🇯🇵 JP" }
-    };
-    let lang = 'en';
-    window.cycleLang = () => {
-        const keys = Object.keys(t);
-        lang = keys[(keys.indexOf(lang) + 1) % keys.length];
-        const d = t[lang];
-        document.getElementById("lang-toggle").innerText = d.flag;
-        document.getElementById("txt-title").innerText = d.title;
-        document.getElementById("btn-start").innerText = d.start;
-        document.getElementById("btn-chat").innerText = d.chat;
-        document.getElementById("dealBtn").innerText = d.deal;
-        document.getElementById("readyBtn").innerText = d.ready;
-        document.getElementById("notReadyBtn").innerText = d.unready;
-        document.getElementById("btn-reveal").innerText = d.reveal;
-        document.getElementById("btn-reset").innerText = d.reset;
-        document.getElementById("txt-close").innerText = d.close;
-        document.getElementById("btn-send").innerText = d.send;
-    };
-
     const firebaseConfig = {
         apiKey: "AIzaSyBjsVUxlNjGUnYioHOlKmk1wEMoVTSVxLw",
         authDomain: "the-family-card-game.firebaseapp.com",
