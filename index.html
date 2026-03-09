@@ -3,41 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Tos Leng - Professional</title>
+    <title>Tos Leng - Pro Edition</title>
     <style>
-        :root { --gold: #d4af37; --felt: #1a5e37; --wood: #3d2b1f; --safe-bottom: env(safe-area-inset-bottom); --red: #e74c3c; }
+        :root { --gold: #d4af37; --felt: #1a5e37; --wood: #3d2b1f; --red: #e74c3c; --safe-bottom: env(safe-area-inset-bottom); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: -apple-system, 'Kantumruy Pro', sans-serif; }
 
         /* Top Bar */
         #room-info-bar {
-            position: fixed; top: 0; width: 100%; height: 44px;
-            padding-top: env(safe-area-inset-top);
+            position: fixed; top: 0; width: 100%; height: 44px; padding-top: env(safe-area-inset-top);
             background: rgba(0,0,0,0.8); display: flex; justify-content: space-between;
             align-items: center; padding-left: 20px; padding-right: 20px;
-            border-bottom: 1px solid #333; z-index: 1000; color: var(--gold);
-            font-size: 12px; font-weight: 600;
+            border-bottom: 1px solid #333; z-index: 1000; color: var(--gold); font-size: 12px;
         }
 
         #game-wrapper { display: flex; flex-direction: column; height: 100dvh; width: 100vw; background: radial-gradient(circle, var(--felt) 0%, #0a2114 100%); }
-
         #poker-table { flex: 1; position: relative; margin: 60px 10px 10px 10px; border: 8px solid var(--wood); border-radius: 50px; box-shadow: inset 0 0 60px rgba(0,0,0,0.8); }
 
-        /* Player UI */
+        /* Player & Card Layout */
         .player-spot { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; width: 130px; }
-        .player-badge { background: rgba(0,0,0,0.85); padding: 4px 10px; border-radius: 10px; border: 1px solid var(--gold); font-size: 10px; color: #fff; text-align: center; width: 100%; }
-        .player-money { color: #2ecc71; font-weight: bold; margin-top: 2px; }
+        .player-badge { background: rgba(0,0,0,0.85); padding: 4px 8px; border-radius: 10px; border: 1px solid var(--gold); font-size: 10px; color: #fff; text-align: center; width: 100%; }
+        .player-money { color: #2ecc71; font-weight: bold; }
         .money-negative { color: var(--red) !important; }
         .is-ready { border-color: #2ecc71; box-shadow: 0 0 10px #2ecc71; }
 
-        .card-row { display: grid; grid-template-columns: repeat(3, 35px); grid-template-rows: repeat(2, 50px); gap: 3px; margin-top: 5px; }
-        .card-img { width: 35px; height: 50px; border-radius: 3px; background: white; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
-        .card-img.active { border: 2px solid var(--gold); transform: scale(1.1); }
+        /* 2x3 Grid for Ang Du Rules */
+        .card-row { display: grid; grid-template-columns: repeat(3, 38px); grid-template-rows: repeat(2, 55px); gap: 4px; margin-top: 5px; }
+        .card-img { width: 38px; height: 55px; border-radius: 4px; background: white; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); transition: 0.2s; }
+        .card-img.active { border: 2.5px solid var(--gold); transform: translateY(-5px) scale(1.1); z-index: 10; }
 
         /* Controls */
-        .controls-bar { background: #111; border-top: 1px solid #333; display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 6px; padding: 10px 10px calc(var(--safe-bottom) + 10px); }
-        .action-group { display: flex; flex-direction: column; gap: 5px; }
-        button { padding: 12px 0; border: none; border-radius: 10px; font-weight: 800; font-size: 10px; color: white; cursor: pointer; text-transform: uppercase; }
+        .controls-bar { background: #111; border-top: 1px solid #333; display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 8px; padding: 10px 10px calc(var(--safe-bottom) + 10px); }
+        .action-group { display: flex; flex-direction: column; gap: 6px; }
+        button { padding: 12px 0; border: none; border-radius: 10px; font-weight: 800; font-size: 11px; color: white; cursor: pointer; text-transform: uppercase; }
         .btn-gold { background: var(--gold); color: #000; }
         .btn-blue { background: #2980b9; }
         .btn-green { background: #27ae60; }
@@ -46,34 +44,29 @@
 
         /* Overlays */
         #login-screen, .modal { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .login-input { width: 80%; max-width: 300px; padding: 14px; margin-bottom: 10px; border-radius: 10px; border: 1px solid var(--gold); background: #111; color: white; text-align: center; font-size: 16px; }
-        
+        .login-input { width: 80%; max-width: 300px; padding: 14px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--gold); background: #111; color: white; text-align: center; font-size: 16px; }
         select.login-input { background: var(--gold); color: black; font-weight: bold; }
-
         #transfer-modal { display: none; background: rgba(0,0,0,0.9); z-index: 10001; }
     </style>
 </head>
 <body>
 
 <div id="login-screen">
-    <h1 style="color:var(--gold); margin-bottom:20px;">TOS LENG</h1>
-    
+    <h1 style="color:var(--gold); margin-bottom:20px; letter-spacing: 2px;">TOS LENG</h1>
     <select id="langSelect" class="login-input" onchange="updateLangUI()">
         <option value="en">ENGLISH</option>
         <option value="kh">ភាសាខ្មែរ</option>
         <option value="cn">中文</option>
     </select>
-
     <input id="roomInput" class="login-input" placeholder="ROOM NAME">
     <input id="passInput" class="login-input" type="password" placeholder="PASSWORD">
     <input id="nameInput" class="login-input" placeholder="YOUR NAME">
-    <input id="moneyInput" class="login-input" type="number" placeholder="START MONEY (e.g. 50000)" value="50000">
-    
+    <input id="moneyInput" class="login-input" type="number" placeholder="START MONEY" value="50000">
     <button onclick="join()" id="joinBtn" style="width:80%; max-width:300px; background:var(--gold); color:black; font-size:16px;">START GAME</button>
 </div>
 
 <div id="transfer-modal" class="modal">
-    <h2 style="color:var(--gold)" id="txt-transfer-title">TRANSFER MONEY</h2>
+    <h2 style="color:var(--gold)" id="txt-transfer-title">TRANSFER</h2>
     <select id="transfer-to" class="login-input"></select>
     <input id="transfer-amount" class="login-input" type="number" placeholder="Amount">
     <div style="display:flex; gap:10px; width:80%; max-width:300px;">
@@ -89,19 +82,16 @@
 
 <div id="game-wrapper">
     <div id="poker-table"></div>
-    
     <div class="controls-bar">
         <div class="action-group">
             <button class="btn-gold" onclick="openTransfer()" id="btn-transfer">TRANSFER</button>
-            <button class="btn-gold" onclick="toggleChat()" id="btn-chat">CHAT</button>
+            <button class="btn-gold" onclick="alert('Chat coming soon!')" id="btn-chat">CHAT</button>
         </div>
-        
         <div class="action-group">
             <button id="dealBtn" class="btn-blue" onclick="deal()">DEAL</button>
             <button id="readyBtn" class="btn-green" style="display:none;" onclick="toggleReady(true)">READY</button>
             <button id="notReadyBtn" class="btn-reset" style="display:none;" onclick="toggleReady(false)">UNREADY</button>
         </div>
-
         <div class="action-group">
             <button class="btn-reveal" onclick="reveal()" id="btn-reveal">REVEAL</button>
             <button class="btn-reset" onclick="resetGame()" id="btn-reset">RESET</button>
@@ -111,7 +101,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, update, onValue, get, push, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, set, update, onValue, get, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBjsVUxlNjGUnYioHOlKmk1wEMoVTSVxLw",
@@ -150,24 +140,15 @@
         room = document.getElementById("roomInput").value.trim().toLowerCase();
         player = document.getElementById("nameInput").value.trim();
         pass = document.getElementById("passInput").value.trim();
-        startMoney = parseInt(document.getElementById("moneyInput").value) || 0;
-        
+        startMoney = parseInt(document.getElementById("moneyInput").value) || 50000;
         if(!room || !player) return alert("Fill all fields");
 
         get(ref(db, `rooms/${room}/config`)).then(snap => {
             const config = snap.val();
             if(config && config.pass !== pass) return alert("Wrong Password!");
-            
             if(!config) set(ref(db, `rooms/${room}/config`), {pass: pass});
-
-            // Set Initial Money
             set(ref(db, `rooms/${room}/wallets/${player}`), startMoney);
-            
             document.getElementById("login-screen").style.display = "none";
-            const l = langData[document.getElementById("langSelect").value];
-            document.getElementById("display-room").innerText = `${l.table}: ${room.toUpperCase()}`;
-            document.getElementById("display-name").innerText = `${l.player}: ${player.toUpperCase()}`;
-
             listen();
         });
     };
@@ -176,8 +157,7 @@
         onValue(ref(db, `rooms/${room}`), snap => {
             const data = snap.val();
             const table = document.getElementById("poker-table");
-            table.innerHTML = "";
-            if(!data) return;
+            table.innerHTML = ""; if(!data) return;
 
             const players = data.wallets ? Object.keys(data.wallets) : [];
             const myCards = (data.players && data.players[player]) ? data.players[player] : null;
@@ -199,11 +179,8 @@
 
                 const badge = document.createElement("div");
                 badge.className = "player-badge" + (isPReady ? " is-ready" : "");
-                
-                // Show Negative Color if below 0
-                const moneyClass = (money < 0) ? "money-negative" : "";
-                badge.innerHTML = `<div>${p === player ? "YOU" : p}</div>
-                                   <div class="player-money ${moneyClass}">${money.toLocaleString()}៛</div>`;
+                badge.innerHTML = `<div>${p === player ? "YOU" : p} ${isPReady ? "✅" : ""}</div>
+                                   <div class="player-money ${money < 0 ? 'money-negative' : ''}">${money.toLocaleString()}៛</div>`;
                 
                 const cardsDiv = document.createElement("div");
                 cardsDiv.className = "card-row";
@@ -212,8 +189,16 @@
                     data.players[p].forEach((c, idx) => {
                         const img = document.createElement("img");
                         img.className = "card-img";
-                        const cardBack = "https://deckofcardsapi.com/static/img/back.png";
-                        img.src = (p === player || c.faceUp) ? getCardImg(c.val) : cardBack;
+                        if(selectedIdx === idx && p === player) img.classList.add("active");
+                        img.src = (p === player || c.faceUp) ? getCardImg(c.val) : "https://deckofcardsapi.com/static/img/back.png";
+                        
+                        // Swap Logic restored for Tos Leng / Ang Du
+                        if(p === player && !amIReady && !c.faceUp) {
+                            img.onclick = () => {
+                                if(selectedIdx === null) { selectedIdx = idx; listen(); } 
+                                else { swapCards(selectedIdx, idx); selectedIdx = null; }
+                            };
+                        }
                         cardsDiv.appendChild(img);
                     });
                 }
@@ -222,20 +207,23 @@
         });
     }
 
-    // --- MONEY TRANSFER LOGIC ---
+    async function swapCards(a, b) {
+        const pRef = ref(db, `rooms/${room}/players/${player}`);
+        const snap = await get(pRef);
+        let c = snap.val(); if(!c) return;
+        [c[a], c[b]] = [c[b], c[a]];
+        set(pRef, c);
+    }
+
     window.openTransfer = () => {
         const modal = document.getElementById("transfer-modal");
         const select = document.getElementById("transfer-to");
         select.innerHTML = "";
-        
         get(ref(db, `rooms/${room}/wallets`)).then(snap => {
             const users = snap.val();
-            for(let u in users) {
-                if(u !== player) {
-                    let opt = document.createElement("option");
-                    opt.value = u; opt.innerText = u;
-                    select.appendChild(opt);
-                }
+            for(let u in users) if(u !== player) {
+                let opt = document.createElement("option"); opt.value = u; opt.innerText = u;
+                select.appendChild(opt);
             }
             modal.style.display = "flex";
         });
@@ -247,24 +235,16 @@
         const toPlayer = document.getElementById("transfer-to").value;
         const amount = parseInt(document.getElementById("transfer-amount").value);
         if(!toPlayer || !amount || amount <= 0) return;
-
-        // Transaction ensures data safety
-        const senderRef = ref(db, `rooms/${room}/wallets/${player}`);
-        const receiverRef = ref(db, `rooms/${room}/wallets/${toPlayer}`);
-
-        runTransaction(senderRef, current => (current || 0) - amount);
-        runTransaction(receiverRef, current => (current || 0) + amount);
-
+        runTransaction(ref(db, `rooms/${room}/wallets/${player}`), c => (c || 0) - amount);
+        runTransaction(ref(db, `rooms/${room}/wallets/${toPlayer}`), c => (c || 0) + amount);
         closeTransfer();
-        document.getElementById("transfer-amount").value = "";
     };
 
-    const getCardImg = (val) => {
-        if (!val) return "https://deckofcardsapi.com/static/img/back.png";
+    const getCardImg = (v) => {
+        if(!v) return "https://deckofcardsapi.com/static/img/back.png";
         const suitMap = {"♠":"S","♥":"H","♦":"D","♣":"C"};
-        let v = val.replace(/[♠♥♦♣]/g, '');
-        if(v === "10") v = "0";
-        return `https://deckofcardsapi.com/static/img/${v}${suitMap[val.slice(-1)]}.png`;
+        let val = v.replace(/[♠♥♦♣]/g, ''); if(val === "10") val = "0";
+        return `https://deckofcardsapi.com/static/img/${val}${suitMap[v.slice(-1)]}.png`;
     };
 
     window.deal = () => {
@@ -272,28 +252,21 @@
         let d=[]; s.forEach(si=>v.forEach(vi=>d.push(vi+si)));
         let cards=d.sort(()=>Math.random()-0.5).slice(0,6).map(val=>({val, faceUp:false}));
         set(ref(db, `rooms/${room}/players/${player}`), cards);
+        set(ref(db, `rooms/${room}/readyStatus/${player}`), false);
     };
 
     window.reveal = () => {
         get(ref(db, `rooms/${room}/players`)).then(snap => {
             let data = snap.val(); if(!data) return;
             let updates = {};
-            for(let p in data) {
-                data[p].forEach((c,i)=> { updates[`rooms/${room}/players/${p}/${i}/faceUp`] = true; });
-            }
+            for(let p in data) data[p].forEach((c,i)=> { updates[`rooms/${room}/players/${p}/${i}/faceUp`] = true; });
             update(ref(db), updates);
         });
     };
 
-    window.resetGame = () => { 
-        if(confirm("Next Round?")) { 
-            set(ref(db, `rooms/${room}/players`), null); 
-            set(ref(db, `rooms/${room}/readyStatus`), null); 
-        } 
-    };
-
+    window.resetGame = () => { if(confirm("New Round?")) { set(ref(db, `rooms/${room}/players`), null); set(ref(db, `rooms/${room}/readyStatus`), null); } };
     window.toggleReady = (s) => set(ref(db, `rooms/${room}/readyStatus/${player}`), s);
-    window.updateLangUI(); // Init language
+    window.updateLangUI();
 </script>
 </body>
 </html>
