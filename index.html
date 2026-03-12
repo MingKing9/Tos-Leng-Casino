@@ -9,7 +9,11 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: -apple-system, sans-serif; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
 
-        #room-info-bar { position: fixed; top: 0; width: 100%; height: 44px; padding-top: env(safe-area-inset-top); background: rgba(0,0,0,0.9); display: flex; justify-content: space-between; align-items: center; padding: 0 15px; border-bottom: 1px solid #444; z-index: 1000; color: var(--gold); font-size: 13px; }
+        #room-info-bar {
+            position: fixed; top: 0; width: 100%; height: 44px; padding-top: env(safe-area-inset-top);
+            background: rgba(0,0,0,0.9); display: flex; justify-content: space-between;
+            align-items: center; padding: 0 15px; border-bottom: 1px solid #444; z-index: 1000; color: var(--gold); font-size: 13px;
+        }
         #btn-leave { color: var(--red); font-weight: bold; cursor: pointer; border: 1px solid var(--red); padding: 2px 8px; border-radius: 5px; }
 
         #game-wrapper { display: flex; flex-direction: column; height: 100dvh; width: 100vw; background: radial-gradient(circle, var(--felt) 0%, #0a2114 100%); }
@@ -23,7 +27,11 @@
         .card-img { width: 35px; height: 50px; border-radius: 4px; background: white; transition: 0.2s; }
         .card-img.active { border: 3px solid var(--gold); transform: scale(1.15); z-index: 50; box-shadow: 0 0 15px var(--gold); }
 
-        .controls-bar { background: #111; border-top: 1px solid #333; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 10px 10px calc(var(--safe-bottom) + 10px); }
+        .controls-bar { 
+            background: #111; border-top: 1px solid #333; 
+            display: grid; grid-template-columns: repeat(5, 1fr); 
+            gap: 6px; padding: 10px 10px calc(var(--safe-bottom) + 10px); 
+        }
         button { padding: 15px 0; border: none; border-radius: 10px; font-weight: bold; font-size: 9px; color: white; cursor: pointer; }
         .btn-gold { background: var(--gold); color: #000; }
         .btn-blue { background: #2980b9; }
@@ -43,23 +51,18 @@
 
 <div id="login-screen">
     <h1 style="color:var(--gold)">TOS LENG</h1>
-    <select id="langSelector" class="login-input" onchange="updateLanguage()">
-        <option value="en">🇺🇸 English</option>
-        <option value="km">🇰🇭 ភាសាខ្មែរ</option>
-        <option value="zh">🇨🇳 中文</option>
-    </select>
     <input id="roomInput" class="login-input" placeholder="Room Name">
     <input id="nameInput" class="login-input" placeholder="Your Name">
     <input id="moneyInput" class="login-input" type="number" value="50000">
-    <button id="startBtn" onclick="join()" class="btn-gold" style="width:85%; max-width:300px; font-size:16px;">START</button>
+    <button onclick="join()" class="btn-gold" style="width:85%; max-width:300px; font-size:16px;">START</button>
 </div>
 
 <div id="transfer-modal" class="modal" style="display:none;">
-    <h2 id="transTitle" style="color:var(--gold)">TRANSFER</h2>
+    <h2 style="color:var(--gold)">TRANSFER</h2>
     <select id="transfer-to" class="login-input"></select>
     <input id="transfer-amount" class="login-input" type="number" placeholder="Amount">
-    <button id="sendBtn" onclick="confirmTransfer()" class="btn-green" style="width:85%; margin-bottom:10px;">SEND</button>
-    <button id="cancelBtn" onclick="document.getElementById('transfer-modal').style.display='none'" class="btn-red" style="width:85%;">CANCEL</button>
+    <button onclick="confirmTransfer()" class="btn-green" style="width:85%; margin-bottom:10px;">SEND</button>
+    <button onclick="document.getElementById('transfer-modal').style.display='none'" class="btn-red" style="width:85%;">CANCEL</button>
 </div>
 
 <div id="room-info-bar">
@@ -70,25 +73,25 @@
 <div id="game-wrapper">
     <div id="poker-table"></div>
     <div class="controls-bar">
-        <button id="moneyBtn" class="btn-gold" onclick="openTransfer()">MONEY</button>
-        <button id="chatBtn" class="btn-gold" onclick="document.getElementById('chat-panel').classList.add('open')">CHAT</button>
+        <button class="btn-gold" onclick="openTransfer()">MONEY</button>
+        <button class="btn-gold" onclick="document.getElementById('chat-panel').classList.add('open')">CHAT</button>
         <button id="dealBtn" class="btn-blue" onclick="deal()">DEAL</button>
         <button id="readyBtn" class="btn-green" style="display:none;" onclick="toggleReady(true)">READY</button>
         <button id="notReadyBtn" class="btn-blue" style="display:none; background:#555;" onclick="toggleReady(false)">UNREADY</button>
-        <button id="revealBtn" class="btn-gold" style="background:#d35400" onclick="reveal()">REVEAL</button>
-        <button id="resetBtn" class="btn-red" onclick="resetGame()">RESET</button>
+        <button class="btn-gold" style="background:#d35400" onclick="reveal()">REVEAL</button>
+        <button class="btn-red" onclick="resetGame()">RESET</button>
     </div>
 </div>
 
 <div id="chat-panel">
     <div style="padding:15px; background:#111; display:flex; justify-content:space-between; color:var(--gold); border-bottom:1px solid #333;">
-        <b id="historyTitle">HISTORY & CHAT</b>
+        <b>HISTORY & CHAT</b>
         <span onclick="document.getElementById('chat-panel').classList.remove('open')" style="cursor:pointer; font-size:20px;">✕</span>
     </div>
     <div id="chat-msgs"></div>
     <div style="padding:10px; display:flex; gap:5px; background:#000;">
         <input id="chatInp" style="flex:1; padding:10px; border-radius:8px; border:none; background:#222; color:white;" placeholder="..." onkeypress="if(event.key==='Enter') sendChat()">
-        <button id="sendChatBtn" onclick="sendChat()" class="btn-gold" style="padding:0 10px;">SEND</button>
+        <button onclick="sendChat()" class="btn-gold" style="padding:0 10px;">SEND</button>
     </div>
 </div>
 
@@ -96,31 +99,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, update, onValue, get, push, runTransaction, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // --- Language Translation Logic ---
-    const t = {
-        en: { start: "START", leave: "LEAVE / ចាកចេញ", deal: "DEAL", ready: "READY", unready: "UNREADY", reveal: "REVEAL", reset: "RESET", chat: "CHAT", money: "MONEY", transfer: "TRANSFER", send: "SEND", cancel: "CANCEL", history: "HISTORY & CHAT" },
-        km: { start: "ចាប់ផ្តើម", leave: "ចាកចេញ", deal: "ចែកបៀ", ready: "រួចរាល់", unready: "មិនទាន់រួចរាល់", reveal: "បើកបៀ", reset: "កំណត់ឡើងវិញ", chat: "ជជែក", money: "លុយ", transfer: "ផ្ទេរប្រាក់", send: "ផ្ញើ", cancel: "បោះបង់", history: "ប្រវត្តិ & ជជែក" },
-        zh: { start: "开始", leave: "离开", deal: "发牌", ready: "准备", unready: "取消准备", reveal: "开牌", reset: "重置", chat: "聊天", money: "资金", transfer: "转账", send: "发送", cancel: "取消", history: "历史记录" }
-    };
-    window.updateLanguage = () => {
-        const d = t[document.getElementById("langSelector").value];
-        document.getElementById("startBtn").innerText = d.start;
-        document.getElementById("btn-leave").innerText = d.leave;
-        document.getElementById("dealBtn").innerText = d.deal;
-        document.getElementById("readyBtn").innerText = d.ready;
-        document.getElementById("notReadyBtn").innerText = d.unready;
-        document.getElementById("revealBtn").innerText = d.reveal;
-        document.getElementById("resetBtn").innerText = d.reset;
-        document.getElementById("chatBtn").innerText = d.chat;
-        document.getElementById("moneyBtn").innerText = d.money;
-        document.getElementById("transTitle").innerText = d.transfer;
-        document.getElementById("sendBtn").innerText = d.send;
-        document.getElementById("cancelBtn").innerText = d.cancel;
-        document.getElementById("historyTitle").innerText = d.history;
-        document.getElementById("sendChatBtn").innerText = d.send;
-    };
-
-    // --- YOUR ORIGINAL GAME LOGIC ---
     const firebaseConfig = {
         apiKey: "AIzaSyBjsVUxlNjGUnYioHOlKmk1wEMoVTSVxLw",
         authDomain: "the-family-card-game.firebaseapp.com",
@@ -131,31 +109,63 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     let room, player;
+    let selectedIdx = null; // To track card selection
 
-    window.join = function() {
-        room = document.getElementById("roomInput").value.trim().toLowerCase();
-        player = document.getElementById("nameInput").value.trim();
-        const money = parseInt(document.getElementById("moneyInput").value) || 50000;
-        if(!room || !player) return alert("Fill Name & Room");
+    window.join = async function() {
+    // Get fresh values from the inputs
+    const inputRoom = document.getElementById("roomInput").value.trim().toLowerCase();
+    const inputPlayer = document.getElementById("nameInput").value.trim();
+    const typedMoney = parseInt(document.getElementById("moneyInput").value) || 50000;
+    
+    if(!inputRoom || !inputPlayer) return alert("Enter Name & Room");
 
-        set(ref(db, `rooms/${room}/wallets/${player}`), money);
-        document.getElementById("login-screen").style.display = "none";
-        document.getElementById("display-room").innerText = room.toUpperCase();
-        document.getElementById("display-name").innerText = player.toUpperCase();
+    // Assign to global variables
+    room = inputRoom;
+    player = inputPlayer;
+
+    const walletRef = ref(db, `rooms/${room}/wallets/${player}`);
+    
+    // FORCE a fresh check from the server
+    const snap = await get(walletRef);
+
+    if (snap.exists()) {
+        const savedAmount = snap.val();
+        // This popup MUST appear if the data exists in Firebase
+        const keep = confirm(`History Found for ${player}!\nSaved Balance: ${savedAmount.toLocaleString()}៛\n\nOK = Continue with saved money\nCancel = Reset to ${typedMoney.toLocaleString()}៛`);
         
-        listen();
-        listenChat();
-    };
-
-    // --- FIX 1: LOGOUT LOGIC ---
-    window.logout = async () => {
-        if(confirm("Confirm: Leave this table?")) {
-            await remove(ref(db, `rooms/${room}/wallets/${player}`));
-            await remove(ref(db, `rooms/${room}/players/${player}`));
-            await remove(ref(db, `rooms/${room}/readyStatus/${player}`));
-            location.reload(); // Hard refresh to login screen
+        if (keep) {
+            // Keep the database as is
+        } else {
+            // Overwrite with the new number
+            await set(walletRef, typedMoney);
         }
-    };
+    } else {
+        // New player
+        await set(walletRef, typedMoney);
+    }
+
+    // Hide login and start game
+    document.getElementById("login-screen").style.display = "none";
+    document.getElementById("display-room").innerText = "TABLE: " + room.toUpperCase();
+    
+    listen();
+    listenChat();
+};
+
+    window.logout = async () => {
+    if(confirm("Exit the table? (Your money will be saved)")) {
+        // 1. Remove from active table
+        await remove(ref(db, `rooms/${room}/players/${player}`));
+        await remove(ref(db, `rooms/${room}/readyStatus/${player}`));
+        
+        // 2. Clear local variables
+        room = null;
+        player = null;
+
+        // 3. FORCE HARD REFRESH (This is the most important part)
+        window.location.reload(true); 
+    }
+};
 
     function listen() {
         onValue(ref(db, `rooms/${room}`), snap => {
@@ -165,6 +175,7 @@
             const wallets = data.wallets || {};
             const players = Object.keys(wallets);
             const isMeReady = data.readyStatus?.[player];
+
             players.forEach((p, i) => {
                 const isReady = (data.readyStatus && data.readyStatus[p]);
                 const angle = (i * (360 / players.length)) * (Math.PI / 180);
@@ -172,9 +183,11 @@
                 spot.className = "player-spot";
                 spot.style.left = (50 + 35 * Math.cos(angle)) + "%";
                 spot.style.top = (50 + 35 * Math.sin(angle)) + "%";
+
                 const badge = document.createElement("div");
                 badge.className = "player-badge" + (isReady ? " is-ready" : "");
                 badge.innerHTML = `<b>${p === player ? "YOU" : p} ${isReady ? "✅" : ""}</b><br>${(wallets[p]||0).toLocaleString()}៛`;
+                
                 const cardsDiv = document.createElement("div");
                 cardsDiv.className = "card-row";
                 if (data.players && data.players[p]) {
@@ -182,14 +195,25 @@
                         const img = document.createElement("img");
                         img.className = "card-img" + (p === player && selectedIdx === idx ? " active" : "");
                         img.src = (p === player || c.faceUp) ? getCardImg(c.val) : "https://deckofcardsapi.com/static/img/back.png";
+                        
+                        // RESTORED: Swap Card Logic
                         if(p === player && !isMeReady && !c.faceUp) {
-                            img.onclick = () => { if(selectedIdx === null) { selectedIdx = idx; listen(); } else { swapCards(selectedIdx, idx); selectedIdx = null; } };
+                            img.onclick = () => {
+                                if(selectedIdx === null) {
+                                    selectedIdx = idx;
+                                    listen(); // Refresh UI to show active state
+                                } else {
+                                    swapCards(selectedIdx, idx);
+                                    selectedIdx = null;
+                                }
+                            };
                         }
                         cardsDiv.appendChild(img);
                     });
                 }
                 spot.appendChild(badge); spot.appendChild(cardsDiv); table.appendChild(spot);
             });
+
             const hasCards = (data.players && data.players[player]);
             document.getElementById("dealBtn").style.display = hasCards ? "none" : "block";
             document.getElementById("readyBtn").style.display = (hasCards && !isMeReady) ? "block" : "none";
@@ -218,7 +242,8 @@
 
     function listenChat() {
         onValue(ref(db, `rooms/${room}/chats`), snap => {
-            const area = document.getElementById("chat-msgs"); area.innerHTML = "";
+            const area = document.getElementById("chat-msgs");
+            area.innerHTML = "";
             const data = snap.val();
             if(data) {
                 Object.values(data).sort((a,b) => a.t - b.t).forEach(c => {
@@ -236,7 +261,10 @@
         const sel = document.getElementById("transfer-to"); sel.innerHTML = "";
         get(ref(db, `rooms/${room}/wallets`)).then(snap => {
             const users = snap.val();
-            for(let u in users) if(u !== player) { let o = document.createElement("option"); o.value = u; o.innerText = u; sel.appendChild(o); }
+            for(let u in users) if(u !== player) {
+                let o = document.createElement("option"); o.value = u; o.innerText = u;
+                sel.appendChild(o);
+            }
             document.getElementById("transfer-modal").style.display = "flex";
         });
     };
