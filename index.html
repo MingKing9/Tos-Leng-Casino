@@ -64,14 +64,9 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, update, onValue, get, push, runTransaction, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-    const firebaseConfig = { 
-        apiKey: "AIzaSyBjsVUxlNjGUnYioHOlKmk1wEMoVTSVxLw", 
-        databaseURL: "https://the-family-card-game-default-rtdb.asia-southeast1.firebasedatabase.app" 
-    };
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    let room, player;
+    
+    // ... the rest of your code ...
+</script>
 
    window.join = async function() {
         room = document.getElementById("roomInput").value.trim().toLowerCase();
