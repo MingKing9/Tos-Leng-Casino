@@ -145,12 +145,17 @@
     };
 
     window.logout = async () => {
-        if(confirm("Exit the table? (Your money will be saved)")) {
-            await remove(ref(db, `rooms/${room}/players/${player}`));
-            await remove(ref(db, `rooms/${room}/readyStatus/${player}`));
-            window.location.reload(true); 
-        }
-    };
+    if(confirm("Exit the table? (Your money will be saved)")) {
+        // This removes the visual card/ready status from the table
+        await remove(ref(db, `rooms/${room}/players/${player}`));
+        await remove(ref(db, `rooms/${room}/readyStatus/${player}`));
+        
+        // This keeps the wallet node untouched, so money remains saved
+        room = null;
+        player = null;
+        window.location.reload(true); 
+    }
+};
 
     function listen() {
         onValue(ref(db, `rooms/${room}`), snap => {
