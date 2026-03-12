@@ -112,27 +112,45 @@
     let selectedIdx = null; // To track card selection
 
     window.join = async function() {
-        room = document.getElementById("roomInput").value.trim().toLowerCase();
-        player = document.getElementById("nameInput").value.trim();
-        const typedMoney = parseInt(document.getElementById("moneyInput").value) || 50000;
-        if(!room || !player) return;
+    // 1. Get current values
+    room = document.getElementById("roomInput").value.trim().toLowerCase();
+    player = document.getElementById("nameInput").value.trim();
+    const typedMoney = parseInt(document.getElementById("moneyInput").value) || 50000;
+    
+    if(!room || !player) return alert("Please enter Name and Room");
 
-        const walletRef = ref(db, `rooms/${room}/wallets/${player}`);
+    // 2. Reference to the specific player's wallet
+    const walletRef = ref(db, `rooms/${room}/wallets/${player}`);
+    
+    try {
+        // 3. Force a fresh fetch from the database
         const snap = await get(walletRef);
+        
         if(snap.exists()){
-            const oldMoney = snap.val();
-            if(!confirm(`Welcome back!\nKeep previous balance: ${oldMoney.toLocaleString()}៛?\n(Cancel to reset to ${typedMoney.toLocaleString()}៛)`)) {
+            const oldBalance = snap.val();
+            // Show the user exactly what we found
+            const keepOld = confirm(`History Found!\nYou have ${oldBalance.toLocaleString()}៛ remaining.\n\nClick OK to keep this money.\nClick CANCEL to start fresh with ${typedMoney.toLocaleString()}៛.`);
+            
+            if (!keepOld) {
                 await set(walletRef, typedMoney);
             }
         } else {
+            // No history found, create new record
             await set(walletRef, typedMoney);
         }
 
+        // 4. Proceed to game
         document.getElementById("login-screen").style.display = "none";
         document.getElementById("display-room").innerText = "TABLE: " + room.toUpperCase();
+        
         listen();
         listenChat();
-    };
+        
+    } catch (error) {
+        console.error("Firebase Error:", error);
+        alert("Connection issue. If you are on Safari, please turn off 'Prevent Cross-Site Tracking' in Settings.");
+    }
+};
 
     window.logout = async () => {
         if(confirm("Exit the game?")) {
