@@ -112,54 +112,49 @@
     let selectedIdx = null; // To track card selection
 
     window.join = async function() {
-    // 1. Get current values
     room = document.getElementById("roomInput").value.trim().toLowerCase();
     player = document.getElementById("nameInput").value.trim();
     const typedMoney = parseInt(document.getElementById("moneyInput").value) || 50000;
     
-    if(!room || !player) return alert("Please enter Name and Room");
+    if(!room || !player) return alert("Enter Name & Room");
 
-    // 2. Reference to the specific player's wallet
     const walletRef = ref(db, `rooms/${room}/wallets/${player}`);
     
-    try {
-        // 3. Force a fresh fetch from the database
-        const snap = await get(walletRef);
+    // Get the data once
+    const snap = await get(walletRef);
+
+    if (snap.exists()) {
+        const savedAmount = snap.val();
+        // Ask to continue
+        const keep = confirm(`Found your history!\nBalance: ${savedAmount.toLocaleString()}៛\n\nOK = Continue with this money\nCancel = Reset to ${typedMoney.toLocaleString()}៛`);
         
-        if(snap.exists()){
-            const oldBalance = snap.val();
-            // Show the user exactly what we found
-            const keepOld = confirm(`History Found!\nYou have ${oldBalance.toLocaleString()}៛ remaining.\n\nClick OK to keep this money.\nClick CANCEL to start fresh with ${typedMoney.toLocaleString()}៛.`);
-            
-            if (!keepOld) {
-                await set(walletRef, typedMoney);
-            }
+        if (keep) {
+            // Do nothing, just use the savedAmount already in the DB
         } else {
-            // No history found, create new record
+            // User wants to reset, so we overwrite
             await set(walletRef, typedMoney);
         }
+    } else {
+        // Brand new player, set the wallet for the first time
+        await set(walletRef, typedMoney);
+    }
 
-        // 4. Proceed to game
-        document.getElementById("login-screen").style.display = "none";
-        document.getElementById("display-room").innerText = "TABLE: " + room.toUpperCase();
+    document.getElementById("login-screen").style.display = "none";
+    document.getElementById("display-room").innerText = "TABLE: " + room.toUpperCase();
+    listen();
+    listenChat();
+};
+window.logout = async () => {
+    if(confirm("Exit the table? (Your money will be saved for next time)")) {
+        // We REMOVE cards and ready status so you disappear from the table
+        await remove(ref(db, `rooms/${room}/players/${player}`));
+        await remove(ref(db, `rooms/${room}/readyStatus/${player}`));
         
-        listen();
-        listenChat();
+        // We DO NOT remove the wallet. We leave it so it can be found later.
         
-    } catch (error) {
-        console.error("Firebase Error:", error);
-        alert("Connection issue. If you are on Safari, please turn off 'Prevent Cross-Site Tracking' in Settings.");
+        location.reload(); 
     }
 };
-
-    window.logout = async () => {
-        if(confirm("Exit the game?")) {
-            await remove(ref(db, `rooms/${room}/wallets/${player}`));
-            await remove(ref(db, `rooms/${room}/players/${player}`));
-            await remove(ref(db, `rooms/${room}/readyStatus/${player}`));
-            location.reload();
-        }
-    };
 
     function listen() {
         onValue(ref(db, `rooms/${room}`), snap => {
