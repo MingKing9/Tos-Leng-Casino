@@ -3,19 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Tos Leng - Final Professional</title>
+    <title>Tos Leng - Perfect Swap Edition</title>
     <style>
         :root { --gold: #d4af37; --felt: #1a5e37; --wood: #3d2b1f; --red: #e74c3c; --safe-bottom: env(safe-area-inset-bottom); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: -apple-system, sans-serif; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
 
-        /* Top Bar with Red Leave Button */
         #room-info-bar {
             position: fixed; top: 0; width: 100%; height: 44px; padding-top: env(safe-area-inset-top);
             background: rgba(0,0,0,0.9); display: flex; justify-content: space-between;
             align-items: center; padding: 0 15px; border-bottom: 1px solid #444; z-index: 1000; color: var(--gold); font-size: 13px;
         }
-        #btn-leave { color: var(--red); font-weight: bold; text-decoration: none; cursor: pointer; border: 1px solid var(--red); padding: 2px 8px; border-radius: 5px; }
+        #btn-leave { color: var(--red); font-weight: bold; cursor: pointer; border: 1px solid var(--red); padding: 2px 8px; border-radius: 5px; }
 
         #game-wrapper { display: flex; flex-direction: column; height: 100dvh; width: 100vw; background: radial-gradient(circle, var(--felt) 0%, #0a2114 100%); }
         #poker-table { flex: 1; position: relative; margin: 60px 10px 10px 10px; border: 8px solid var(--wood); border-radius: 50px; box-shadow: inset 0 0 60px rgba(0,0,0,0.8); }
@@ -25,9 +24,9 @@
         .is-ready { border-color: #2ecc71; box-shadow: 0 0 10px #2ecc71; }
 
         .card-row { display: grid; grid-template-columns: repeat(3, 35px); grid-template-rows: repeat(2, 50px); gap: 4px; margin-top: 5px; }
-        .card-img { width: 35px; height: 50px; border-radius: 4px; background: white; }
+        .card-img { width: 35px; height: 50px; border-radius: 4px; background: white; transition: 0.2s; }
+        .card-img.active { border: 3px solid var(--gold); transform: scale(1.15); z-index: 50; box-shadow: 0 0 15px var(--gold); }
 
-        /* Clean Bottom Bar with 5 Buttons */
         .controls-bar { 
             background: #111; border-top: 1px solid #333; 
             display: grid; grid-template-columns: repeat(5, 1fr); 
@@ -92,7 +91,7 @@
     <div id="chat-msgs"></div>
     <div style="padding:10px; display:flex; gap:5px; background:#000;">
         <input id="chatInp" style="flex:1; padding:10px; border-radius:8px; border:none; background:#222; color:white;" placeholder="..." onkeypress="if(event.key==='Enter') sendChat()">
-        <button onclick="sendChat()" class="btn-gold" style="padding:0 15px;">SEND</button>
+        <button onclick="sendChat()" class="btn-gold" style="padding:0 10px;">SEND</button>
     </div>
 </div>
 
@@ -110,37 +109,29 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     let room, player;
+    let selectedIdx = null; // To track card selection
 
-   window.join = async function() {
-    room = document.getElementById("roomInput").value.trim().toLowerCase();
-    player = document.getElementById("nameInput").value.trim();
-    const typedMoney = parseInt(document.getElementById("moneyInput").value) || 50000;
-    
-    if(!room || !player) return alert("Please input name/room");
+    window.join = async function() {
+        room = document.getElementById("roomInput").value.trim().toLowerCase();
+        player = document.getElementById("nameInput").value.trim();
+        const typedMoney = parseInt(document.getElementById("moneyInput").value) || 50000;
+        if(!room || !player) return;
 
-    // Check if player already exists in this room
-    const userWalletRef = ref(db, `rooms/${room}/wallets/${player}`);
-    const snapshot = await get(userWalletRef);
-
-    if (snapshot.exists()) {
-        // Player exists! Ask if they want to use old money or new money
-        const oldMoney = snapshot.val();
-        const useOld = confirm(`Welcome back ${player}!\nFound previous balance: ${oldMoney.toLocaleString()}៛\n\nClick OK to keep your money.\nClick Cancel to reset to ${typedMoney.toLocaleString()}៛.`);
-        
-        if (!useOld) {
-            await set(userWalletRef, typedMoney);
+        const walletRef = ref(db, `rooms/${room}/wallets/${player}`);
+        const snap = await get(walletRef);
+        if(snap.exists()){
+            const oldMoney = snap.val();
+            if(!confirm(`Welcome back!\nKeep previous balance: ${oldMoney.toLocaleString()}៛?\n(Cancel to reset to ${typedMoney.toLocaleString()}៛)`)) {
+                await set(walletRef, typedMoney);
+            }
+        } else {
+            await set(walletRef, typedMoney);
         }
-    } else {
-        // New player, use the typed amount
-        await set(userWalletRef, typedMoney);
-    }
 
-    document.getElementById("login-screen").style.display = "none";
-    document.getElementById("display-room").innerText = "TABLE: " + room.toUpperCase();
-    
-    listen();
-    listenChat();
-};
+        document.getElementById("login-screen").style.display = "none";
+        document.getElementById("display-room").innerText = "TABLE: " + room.toUpperCase();
+        listen();
+        listenChat();
     };
 
     window.logout = async () => {
@@ -159,6 +150,7 @@
             table.innerHTML = "";
             const wallets = data.wallets || {};
             const players = Object.keys(wallets);
+            const isMeReady = data.readyStatus?.[player];
 
             players.forEach((p, i) => {
                 const isReady = (data.readyStatus && data.readyStatus[p]);
@@ -177,8 +169,21 @@
                 if (data.players && data.players[p]) {
                     data.players[p].forEach((c, idx) => {
                         const img = document.createElement("img");
-                        img.className = "card-img";
+                        img.className = "card-img" + (p === player && selectedIdx === idx ? " active" : "");
                         img.src = (p === player || c.faceUp) ? getCardImg(c.val) : "https://deckofcardsapi.com/static/img/back.png";
+                        
+                        // RESTORED: Swap Card Logic
+                        if(p === player && !isMeReady && !c.faceUp) {
+                            img.onclick = () => {
+                                if(selectedIdx === null) {
+                                    selectedIdx = idx;
+                                    listen(); // Refresh UI to show active state
+                                } else {
+                                    swapCards(selectedIdx, idx);
+                                    selectedIdx = null;
+                                }
+                            };
+                        }
                         cardsDiv.appendChild(img);
                     });
                 }
@@ -186,28 +191,27 @@
             });
 
             const hasCards = (data.players && data.players[player]);
-            const amIReady = (data.readyStatus && data.readyStatus[player]);
             document.getElementById("dealBtn").style.display = hasCards ? "none" : "block";
-            document.getElementById("readyBtn").style.display = (hasCards && !amIReady) ? "block" : "none";
-            document.getElementById("notReadyBtn").style.display = amIReady ? "block" : "none";
+            document.getElementById("readyBtn").style.display = (hasCards && !isMeReady) ? "block" : "none";
+            document.getElementById("notReadyBtn").style.display = isMeReady ? "block" : "none";
         });
+    }
+
+    async function swapCards(a, b) {
+        const pRef = ref(db, `rooms/${room}/players/${player}`);
+        const snap = await get(pRef);
+        let c = snap.val(); if(!c) return;
+        [c[a], c[b]] = [c[b], c[a]];
+        await set(pRef, c);
     }
 
     window.confirmTransfer = async () => {
         const to = document.getElementById("transfer-to").value;
         const amt = parseInt(document.getElementById("transfer-amount").value);
         if(!to || !amt) return;
-
         await runTransaction(ref(db, `rooms/${room}/wallets/${player}`), c => (c || 0) - amt);
         await runTransaction(ref(db, `rooms/${room}/wallets/${to}`), c => (c || 0) + amt);
-
-        await push(ref(db, `rooms/${room}/chats`), {
-            u: "SYSTEM",
-            m: `💸 ${player} SENT ${amt.toLocaleString()}៛ TO ${to}`,
-            t: Date.now(),
-            isReceipt: true
-        });
-
+        await push(ref(db, `rooms/${room}/chats`), { u: "SYSTEM", m: `💸 ${player} SENT ${amt.toLocaleString()}៛ TO ${to}`, t: Date.now(), isReceipt: true });
         document.getElementById("transfer-modal").style.display = "none";
         document.getElementById("chat-panel").classList.add("open");
     };
@@ -220,13 +224,8 @@
             if(data) {
                 Object.values(data).sort((a,b) => a.t - b.t).forEach(c => {
                     let d = document.createElement("div");
-                    if(c.isReceipt) {
-                        d.className = "receipt";
-                        d.innerHTML = c.m;
-                    } else {
-                        d.style.marginBottom = "8px";
-                        d.innerHTML = `<b style="color:var(--gold)">${c.u}:</b> ${c.m}`;
-                    }
+                    if(c.isReceipt) { d.className = "receipt"; d.innerHTML = c.m; }
+                    else { d.style.marginBottom = "8px"; d.innerHTML = `<b style="color:var(--gold)">${c.u}:</b> ${c.m}`; }
                     area.appendChild(d);
                 });
             }
@@ -275,7 +274,7 @@
         });
     };
 
-    window.resetGame = () => { if(confirm("Clear cards for next round?")) { set(ref(db, `rooms/${room}/players`), null); set(ref(db, `rooms/${room}/readyStatus`), null); } };
+    window.resetGame = () => { if(confirm("Clear cards?")) { set(ref(db, `rooms/${room}/players`), null); set(ref(db, `rooms/${room}/readyStatus`), null); } };
     window.toggleReady = (s) => set(ref(db, `rooms/${room}/readyStatus/${player}`), s);
 </script>
 </body>
