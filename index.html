@@ -3,42 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Tos Leng Pro - Accountability Edition</title>
+    <title>Tos Leng - Global Fix</title>
     <style>
-        :root { --gold: #d4af37; --felt: #1a5e37; --wood: #3d2b1f; --red: #e74c3c; --safe-bottom: env(safe-area-inset-bottom); }
+        :root { --gold: #d4af37; --felt: #1a5e37; --wood: #3d2b1f; --red: #e74c3c; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: -apple-system, sans-serif; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
 
+        /* Top Bar */
         #room-info-bar {
             position: fixed; top: 0; width: 100%; height: 44px; padding-top: env(safe-area-inset-top);
             background: rgba(0,0,0,0.9); display: flex; justify-content: space-between;
-            align-items: center; padding: 0 15px; border-bottom: 1px solid #444; z-index: 1000; color: var(--gold); font-size: 12px;
+            align-items: center; padding: 0 15px; border-bottom: 1px solid #444; z-index: 1000; color: var(--gold);
         }
 
         #game-wrapper { display: flex; flex-direction: column; height: 100dvh; width: 100vw; background: radial-gradient(circle, var(--felt) 0%, #0a2114 100%); }
         #poker-table { flex: 1; position: relative; margin: 55px 10px 10px 10px; border: 8px solid var(--wood); border-radius: 50px; box-shadow: inset 0 0 60px rgba(0,0,0,0.8); }
 
-        .player-spot { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; width: 120px; z-index: 10; }
-        .player-badge { background: rgba(0,0,0,0.85); padding: 5px; border-radius: 10px; border: 1px solid var(--gold); font-size: 10px; color: #fff; text-align: center; width: 100%; }
+        /* Players */
+        .player-spot { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; width: 100px; }
+        .player-badge { background: rgba(0,0,0,0.9); padding: 5px; border-radius: 8px; border: 1px solid var(--gold); font-size: 10px; color: #fff; text-align: center; width: 100%; }
         .is-ready { border-color: #2ecc71; box-shadow: 0 0 10px #2ecc71; }
 
-        .card-row { display: grid; grid-template-columns: repeat(3, 38px); grid-template-rows: repeat(2, 55px); gap: 4px; margin-top: 5px; }
-        .card-img { width: 38px; height: 55px; border-radius: 4px; background: white; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
-        .card-img.active { border: 3px solid var(--gold); transform: scale(1.1); }
+        /* Cards */
+        .card-row { display: grid; grid-template-columns: repeat(3, 32px); grid-template-rows: repeat(2, 45px); gap: 3px; margin-top: 5px; }
+        .card-img { width: 32px; height: 45px; border-radius: 3px; background: white; }
 
-        .controls-bar { background: #111; border-top: 1px solid #333; display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 8px; padding: 10px 10px calc(var(--safe-bottom) + 10px); }
-        .action-group { display: flex; flex-direction: column; gap: 6px; }
-        button { padding: 12px 0; border: none; border-radius: 10px; font-weight: bold; font-size: 10px; color: white; cursor: pointer; position: relative; }
+        /* Bottom Controls */
+        .controls-bar { background: #111; border-top: 1px solid #333; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 5px; padding: 10px; }
+        button { padding: 10px 0; border: none; border-radius: 8px; font-weight: bold; font-size: 9px; color: white; cursor: pointer; }
         .btn-gold { background: var(--gold); color: #000; }
         .btn-blue { background: #2980b9; }
         .btn-green { background: #27ae60; }
         .btn-red { background: #c0392b; }
 
-        /* Chat with System Messages */
-        #chat-panel { position: fixed; right: -300px; top: 0; width: 280px; height: 100%; background: rgba(10,10,10,0.98); border-left: 2px solid var(--gold); transition: 0.3s; z-index: 2000; display: flex; flex-direction: column; }
+        /* Chat Receipt Style */
+        #chat-panel { position: fixed; right: -300px; top: 0; width: 280px; height: 100%; background: #000; border-left: 2px solid var(--gold); transition: 0.3s; z-index: 2000; display: flex; flex-direction: column; }
         #chat-panel.open { right: 0; }
         #chat-msgs { flex: 1; overflow-y: auto; padding: 15px; color: white; font-size: 12px; }
-        .sys-msg { color: #2ecc71; font-style: italic; margin-bottom: 8px; padding: 4px; border-radius: 4px; background: rgba(46, 204, 113, 0.1); }
+        .receipt { color: #2ecc71; background: rgba(46, 204, 113, 0.1); padding: 5px; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid #2ecc71; }
 
         #login-screen, .modal { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .login-input { width: 85%; max-width: 300px; padding: 14px; margin-bottom: 10px; border-radius: 10px; border: 1px solid var(--gold); background: #111; color: white; text-align: center; }
@@ -48,58 +50,48 @@
 
 <div id="login-screen">
     <h1 style="color:var(--gold)">TOS LENG</h1>
-    <select id="langSelect" class="login-input" style="background:var(--gold); color:black;">
-        <option value="kh">ភាសាខ្មែរ</option>
-        <option value="en">ENGLISH</option>
-        <option value="cn">中文</option>
-    </select>
     <input id="roomInput" class="login-input" placeholder="Room Name">
     <input id="nameInput" class="login-input" placeholder="Your Name">
     <input id="moneyInput" class="login-input" type="number" value="50000">
-    <button onclick="join()" class="btn-gold" style="width:85%; max-width:300px;">START</button>
+    <button onclick="join()" class="btn-gold" style="width:85%; max-width:300px; font-size: 16px;">START</button>
 </div>
 
 <div id="transfer-modal" class="modal" style="display:none;">
-    <h2 style="color:var(--gold)" id="txt-trans-title">TRANSFER</h2>
+    <h2 style="color:var(--gold)">SEND MONEY</h2>
     <select id="transfer-to" class="login-input"></select>
     <input id="transfer-amount" class="login-input" type="number" placeholder="Amount">
-    <button onclick="confirmTransfer()" class="btn-green" style="width:85%; margin-bottom:10px;">SEND</button>
+    <button onclick="confirmTransfer()" class="btn-green" style="width:85%; margin-bottom:10px;">CONFIRM SEND</button>
     <button onclick="document.getElementById('transfer-modal').style.display='none'" class="btn-red" style="width:85%;">CANCEL</button>
 </div>
 
 <div id="room-info-bar">
-    <span id="display-room">-</span>
-    <span id="display-name" onclick="logout()" style="color:var(--red); text-decoration: underline; cursor:pointer;">LEAVE</span>
+    <span id="display-room">ROOM: -</span>
+    <span id="display-name">USER: -</span>
 </div>
 
 <div id="game-wrapper">
     <div id="poker-table"></div>
     <div class="controls-bar">
-        <div class="action-group">
-            <button class="btn-gold" onclick="openTransfer()" id="btn-money-ui">MONEY</button>
-            <button class="btn-gold" onclick="document.getElementById('chat-panel').classList.add('open')">CHAT</button>
-        </div>
-        <div class="action-group">
-            <button id="dealBtn" class="btn-blue" onclick="deal()">DEAL</button>
-            <button id="readyBtn" class="btn-green" style="display:none;" onclick="toggleReady(true)">READY</button>
-            <button id="notReadyBtn" class="btn-red" style="display:none;" onclick="toggleReady(false)">UNREADY</button>
-        </div>
-        <div class="action-group">
-            <button id="btn-reveal-ui" class="btn-gold" style="background:#d35400" onclick="reveal()">REVEAL</button>
-            <button id="btn-reset-ui" class="btn-red" onclick="resetGame()">RESET</button>
-        </div>
+        <button class="btn-gold" onclick="openTransfer()">MONEY</button>
+        <button class="btn-gold" onclick="document.getElementById('chat-panel').classList.add('open')">CHAT</button>
+        <button id="dealBtn" class="btn-blue" onclick="deal()">DEAL</button>
+        <button id="readyBtn" class="btn-green" style="display:none;" onclick="toggleReady(true)">READY</button>
+        <button id="notReadyBtn" class="btn-blue" style="display:none; background:#555;" onclick="toggleReady(false)">UNREADY</button>
+        <button class="btn-gold" style="background:#d35400" onclick="reveal()">REVEAL</button>
+        <button class="btn-red" style="grid-column: span 2;" onclick="resetGame()">NEW ROUND</button>
+        <button class="btn-red" style="grid-column: span 2; background:#444;" onclick="logout()">LOGOUT / LEAVE</button>
     </div>
 </div>
 
 <div id="chat-panel">
-    <div style="padding:15px; color:var(--gold); display:flex; justify-content:space-between; background:#111;">
-        <span>CHAT LOG</span>
-        <span onclick="document.getElementById('chat-panel').classList.remove('open')">✕</span>
+    <div style="padding:15px; background:#111; display:flex; justify-content:space-between; color:var(--gold);">
+        <b>HISTORY & CHAT</b>
+        <span onclick="document.getElementById('chat-panel').classList.remove('open')" style="cursor:pointer;">✕</span>
     </div>
     <div id="chat-msgs"></div>
-    <div style="padding:10px; display:flex; gap:5px; background:#000;">
-        <input id="chatInp" style="flex:1; padding:10px; border-radius:8px; background:#222; color:white; border:none;" onkeypress="if(event.key==='Enter') sendChat()">
-        <button onclick="sendChat()" class="btn-gold" style="width:50px;">SEND</button>
+    <div style="padding:10px; display:flex; gap:5px;">
+        <input id="chatInp" style="flex:1; padding:8px; border-radius:5px; border:none; background:#222; color:white;">
+        <button onclick="sendChat()" class="btn-gold" style="padding:0 10px;">SEND</button>
     </div>
 </div>
 
@@ -116,37 +108,30 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    let room, player, lang;
-    let selectedIdx = null;
-
-    const dictionary = {
-        kh: { table: "តុ", player: "អ្នកលេង", leave: "ចាកចេញ", sent: "បានផ្ញើ", to: "ទៅកាន់", resetConf: "តើអ្នកចង់សម្អាតអ្នកលេងដែលមិននៅទីនេះមែនទេ?" },
-        en: { table: "TABLE", player: "PLAYER", leave: "LEAVE", sent: "sent", to: "to", resetConf: "Reset and clear inactive players?" },
-        cn: { table: "桌", player: "玩家", leave: "退出", sent: "转了", to: "给", resetConf: "重置并清除离线玩家？" }
-    };
+    let room, player;
 
     window.join = function() {
         room = document.getElementById("roomInput").value.trim().toLowerCase();
         player = document.getElementById("nameInput").value.trim();
-        lang = document.getElementById("langSelect").value;
         const money = parseInt(document.getElementById("moneyInput").value) || 50000;
-        if(!room || !player) return;
+        if(!room || !player) return alert("Fill Name & Room");
 
         set(ref(db, `rooms/${room}/wallets/${player}`), money);
         document.getElementById("login-screen").style.display = "none";
-        document.getElementById("display-room").innerText = `${dictionary[lang].table}: ${room.toUpperCase()}`;
-        document.getElementById("display-name").innerText = `${dictionary[lang].leave} (${player})`;
+        document.getElementById("display-room").innerText = room.toUpperCase();
+        document.getElementById("display-name").innerText = player.toUpperCase();
         
         listen();
         listenChat();
     };
 
+    // --- FIX 1: LOGOUT LOGIC ---
     window.logout = async () => {
-        if(confirm("Exit game?")) {
+        if(confirm("Confirm: Leave this table?")) {
             await remove(ref(db, `rooms/${room}/wallets/${player}`));
             await remove(ref(db, `rooms/${room}/players/${player}`));
             await remove(ref(db, `rooms/${room}/readyStatus/${player}`));
-            location.reload();
+            location.reload(); // Hard refresh to login screen
         }
     };
 
@@ -159,7 +144,7 @@
             const players = Object.keys(wallets);
 
             players.forEach((p, i) => {
-                const isPReady = (data.readyStatus && data.readyStatus[p]);
+                const isReady = (data.readyStatus && data.readyStatus[p]);
                 const angle = (i * (360 / players.length)) * (Math.PI / 180);
                 const spot = document.createElement("div");
                 spot.className = "player-spot";
@@ -167,54 +152,50 @@
                 spot.style.top = (50 + 35 * Math.sin(angle)) + "%";
 
                 const badge = document.createElement("div");
-                badge.className = "player-badge" + (isPReady ? " is-ready" : "");
-                badge.innerHTML = `<b>${p} ${isPReady ? "✅" : ""}</b><br>
-                                   <span style="color:#2ecc71">${(wallets[p]||0).toLocaleString()}៛</span>`;
+                badge.className = "player-badge" + (isReady ? " is-ready" : "");
+                badge.innerHTML = `<b>${p} ${isReady ? "✅" : ""}</b><br>${(wallets[p]||0).toLocaleString()}៛`;
                 
                 const cardsDiv = document.createElement("div");
                 cardsDiv.className = "card-row";
                 if (data.players && data.players[p]) {
                     data.players[p].forEach((c, idx) => {
                         const img = document.createElement("img");
-                        img.className = "card-img" + (selectedIdx === idx && p === player ? " active" : "");
+                        img.className = "card-img";
                         img.src = (p === player || c.faceUp) ? getCardImg(c.val) : "https://deckofcardsapi.com/static/img/back.png";
-                        if(p === player && !isPReady && !c.faceUp) {
-                            img.onclick = () => {
-                                if(selectedIdx === null) { selectedIdx = idx; listen(); }
-                                else { swapCards(selectedIdx, idx); selectedIdx = null; }
-                            };
-                        }
                         cardsDiv.appendChild(img);
                     });
                 }
                 spot.appendChild(badge); spot.appendChild(cardsDiv); table.appendChild(spot);
             });
-            
+
+            const hasCards = (data.players && data.players[player]);
             const amIReady = (data.readyStatus && data.readyStatus[player]);
-            document.getElementById("dealBtn").style.display = (data.players && data.players[player]) ? "none" : "block";
-            document.getElementById("readyBtn").style.display = ((data.players && data.players[player]) && !amIReady) ? "block" : "none";
+            document.getElementById("dealBtn").style.display = hasCards ? "none" : "block";
+            document.getElementById("readyBtn").style.display = (hasCards && !amIReady) ? "block" : "none";
             document.getElementById("notReadyBtn").style.display = amIReady ? "block" : "none";
         });
     }
 
-    window.confirmTransfer = () => {
+    // --- FIX 2: TRANSFER & RECEIPT LOGIC ---
+    window.confirmTransfer = async () => {
         const to = document.getElementById("transfer-to").value;
         const amt = parseInt(document.getElementById("transfer-amount").value);
         if(!to || !amt) return;
-        
-        runTransaction(ref(db, `rooms/${room}/wallets/${player}`), c => (c || 0) - amt);
-        runTransaction(ref(db, `rooms/${room}/wallets/${to}`), c => (c || 0) + amt);
-        
-        // Anti-Cheat: Log it in Chat
-        const d = dictionary[lang];
-        push(ref(db, `rooms/${room}/chats`), { 
-            u: "SYSTEM", 
-            m: `${player} ${d.sent} ${amt.toLocaleString()}៛ ${d.to} ${to}`, 
+
+        // Execute Money Swap
+        await runTransaction(ref(db, `rooms/${room}/wallets/${player}`), c => (c || 0) - amt);
+        await runTransaction(ref(db, `rooms/${room}/wallets/${to}`), c => (c || 0) + amt);
+
+        // SEND RECEIPT TO CHAT
+        await push(ref(db, `rooms/${room}/chats`), {
+            u: "SYSTEM",
+            m: `💸 ${player} SENT ${amt.toLocaleString()}៛ TO ${to}`,
             t: Date.now(),
-            isSys: true
+            isReceipt: true
         });
-        
+
         document.getElementById("transfer-modal").style.display = "none";
+        document.getElementById("chat-panel").classList.add("open"); // Auto-open chat to show receipt
     };
 
     function listenChat() {
@@ -225,9 +206,9 @@
             if(data) {
                 Object.values(data).sort((a,b) => a.t - b.t).forEach(c => {
                     let d = document.createElement("div");
-                    if(c.isSys) {
-                        d.className = "sys-msg";
-                        d.innerHTML = `📢 ${c.m}`;
+                    if(c.isReceipt) {
+                        d.className = "receipt";
+                        d.innerHTML = c.m;
                     } else {
                         d.style.marginBottom = "5px";
                         d.innerHTML = `<b style="color:var(--gold)">${c.u}:</b> ${c.m}`;
@@ -237,22 +218,6 @@
             }
             area.scrollTop = area.scrollHeight;
         });
-    }
-
-    window.resetGame = () => { 
-        if(confirm(dictionary[lang].resetConf)) { 
-            // This clears the table and ensures only current wallets are kept
-            set(ref(db, `rooms/${room}/players`), null); 
-            set(ref(db, `rooms/${room}/readyStatus`), null); 
-        } 
-    };
-
-    async function swapCards(a, b) {
-        const pRef = ref(db, `rooms/${room}/players/${player}`);
-        const snap = await get(pRef);
-        let c = snap.val(); if(!c) return;
-        [c[a], c[b]] = [c[b], c[a]];
-        await set(pRef, c);
     }
 
     window.openTransfer = () => {
@@ -285,7 +250,6 @@
         let d=[]; s.forEach(si=>v.forEach(vi=>d.push(vi+si)));
         let cards=d.sort(()=>Math.random()-0.5).slice(0,6).map(val=>({val, faceUp:false}));
         set(ref(db, `rooms/${room}/players/${player}`), cards);
-        set(ref(db, `rooms/${room}/readyStatus/${player}`), false);
     };
 
     window.reveal = () => {
@@ -297,6 +261,7 @@
         });
     };
 
+    window.resetGame = () => { set(ref(db, `rooms/${room}/players`), null); set(ref(db, `rooms/${room}/readyStatus`), null); };
     window.toggleReady = (s) => set(ref(db, `rooms/${room}/readyStatus/${player}`), s);
 </script>
 </body>
