@@ -111,28 +111,33 @@
     let room, player;
     let selectedIdx = null; // To track card selection
 
-    window.join = async function() {
-        room = document.getElementById("roomInput").value.trim().toLowerCase();
-        player = document.getElementById("nameInput").value.trim();
-        const typedMoney = parseInt(document.getElementById("moneyInput").value) || 50000;
-        if(!room || !player) return;
+    // --- REPLACE THIS SPECIFIC PART IN YOUR CURRENT FULL FILE ---
+window.join = async function() {
+    const inputRoom = document.getElementById("roomInput").value.trim().toLowerCase();
+    const inputPlayer = document.getElementById("nameInput").value.trim();
+    const typedMoney = parseInt(document.getElementById("moneyInput").value) || 50000;
+    
+    if(!inputRoom || !inputPlayer) return alert("Enter Name & Room");
 
-        const walletRef = ref(db, `rooms/${room}/wallets/${player}`);
-        const snap = await get(walletRef);
-        if(snap.exists()){
-            const oldMoney = snap.val();
-            if(!confirm(`Welcome back!\nKeep previous balance: ${oldMoney.toLocaleString()}៛?\n(Cancel to reset to ${typedMoney.toLocaleString()}៛)`)) {
-                await set(walletRef, typedMoney);
-            }
-        } else {
-            await set(walletRef, typedMoney);
-        }
+    room = inputRoom;
+    player = inputPlayer;
 
-        document.getElementById("login-screen").style.display = "none";
-        document.getElementById("display-room").innerText = "TABLE: " + room.toUpperCase();
-        listen();
-        listenChat();
-    };
+    const walletRef = ref(db, `rooms/${room}/wallets/${player}`);
+    const snap = await get(walletRef);
+
+    if (!snap.exists()) {
+        await set(walletRef, typedMoney);
+    }
+
+    // Force add player to the table so they aren't a ghost
+    await set(ref(db, `rooms/${room}/players/${player}`), []);
+
+    document.getElementById("login-screen").style.display = "none";
+    document.getElementById("display-room").innerText = "TABLE: " + room.toUpperCase();
+    
+    listen();
+    listenChat();
+};
 
     window.logout = async () => {
         if(confirm("Exit the game?")) {
