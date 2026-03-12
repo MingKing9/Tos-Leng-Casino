@@ -121,11 +121,16 @@
     };
 
     // --- YOUR ORIGINAL GAME LOGIC ---
-    const firebaseConfig = { apiKey: "AIzaSyBjsVUxlNjGUnYioHOlKmk1wEMoVTSVxLw", authDomain: "the-family-card-game.firebaseapp.com", databaseURL: "https://the-family-card-game-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "the-family-card-game" };
+    const firebaseConfig = {
+        apiKey: "AIzaSyBjsVUxlNjGUnYioHOlKmk1wEMoVTSVxLw",
+        authDomain: "the-family-card-game.firebaseapp.com",
+        databaseURL: "https://the-family-card-game-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "the-family-card-game"
+    };
+
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     let room, player;
-    let selectedIdx = null;
 
     window.join = function() {
         room = document.getElementById("roomInput").value.trim().toLowerCase();
