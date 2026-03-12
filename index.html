@@ -151,7 +151,8 @@
     listen();
     listenChat();
 };
-window.logout = async () => {
+
+    window.logout = async () => {
     if(confirm("Exit the table? (Your money will be saved)")) {
         // 1. Remove from active table
         await remove(ref(db, `rooms/${room}/players/${player}`));
