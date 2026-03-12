@@ -114,11 +114,33 @@
     window.updateLanguage = () => {
         const lang = document.getElementById("langSelector").value;
         const d = t[lang];
+
+        // Login Screen
         document.querySelector('button[onclick="join()"]').innerText = d.start;
+        
+        // Header
         document.getElementById('btn-leave').innerText = d.leave;
+        
+        // Main Controls
         document.getElementById('dealBtn').innerText = d.deal;
         document.getElementById('readyBtn').innerText = d.ready;
         document.getElementById('notReadyBtn').innerText = d.unready;
+        
+        // Find buttons by their class or structure since they don't have IDs
+        const buttons = document.querySelectorAll('.controls-bar button');
+        buttons[0].innerText = d.money;   // MONEY button
+        buttons[1].innerText = d.chat;    // CHAT button
+        buttons[5].innerText = d.reveal;  // REVEAL button
+        buttons[6].innerText = d.reset;   // RESET button
+        
+        // Transfer Modal
+        document.querySelector('#transfer-modal h2').innerText = d.transfer;
+        document.querySelector('#transfer-modal button:nth-of-type(1)').innerText = d.send;
+        document.querySelector('#transfer-modal button:nth-of-type(2)').innerText = d.cancel;
+        
+        // Chat Panel
+        document.querySelector('#chat-panel b').innerText = d.history;
+        document.querySelector('#chat-panel button').innerText = d.send;
     };
 
     const firebaseConfig = {
