@@ -295,6 +295,21 @@ window.logout = async () => {
             for(let p in d) d[p].forEach((c,i)=> { up[`rooms/${room}/players/${p}/${i}/faceUp`] = true; });
             update(ref(db), up);
         });
+        // Add this in your <head> or bottom of <body>
+<audio id="sound-deal" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3"></audio>
+<audio id="sound-money" src="https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3"></audio>
+
+// Inside your JS functions:
+function deal() {
+    document.getElementById("sound-deal").play(); // Plays the shuffle sound
+    // ... existing code
+}
+
+function confirmTransfer() {
+    // ... existing code
+    document.getElementById("sound-money").play(); // Plays the "ding" sound
+    // ...
+}
     };
 
     window.resetGame = () => { if(confirm("Clear cards?")) { set(ref(db, `rooms/${room}/players`), null); set(ref(db, `rooms/${room}/readyStatus`), null); } };
