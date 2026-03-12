@@ -123,7 +123,136 @@
     // Assign helper functions to window
     window.deal = () => { /* Add your deal logic */ };
     window.reveal = () => { /* Add your reveal logic */ };
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Tos Leng - Repaired</title>
+    <style>
+        :root { --gold: #d4af37; --felt: #1a5e37; --wood: #3d2b1f; --red: #e74c3c; --safe-bottom: env(safe-area-inset-bottom); }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: -apple-system, sans-serif; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
+        #room-info-bar { position: fixed; top: 0; width: 100%; height: 44px; padding-top: env(safe-area-inset-top); background: rgba(0,0,0,0.9); display: flex; justify-content: space-between; align-items: center; padding: 0 15px; border-bottom: 1px solid #444; z-index: 1000; color: var(--gold); font-size: 13px; }
+        #btn-leave { color: var(--red); font-weight: bold; cursor: pointer; border: 1px solid var(--red); padding: 2px 8px; border-radius: 5px; }
+        #game-wrapper { display: flex; flex-direction: column; height: 100dvh; width: 100vw; background: radial-gradient(circle, var(--felt) 0%, #0a2114 100%); }
+        #poker-table { flex: 1; position: relative; margin: 60px 10px 10px 10px; border: 8px solid var(--wood); border-radius: 50px; box-shadow: inset 0 0 60px rgba(0,0,0,0.8); }
+        .player-spot { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; width: 110px; }
+        .player-badge { background: rgba(0,0,0,0.85); padding: 5px; border-radius: 10px; border: 1px solid var(--gold); font-size: 10px; color: #fff; text-align: center; width: 100%; }
+        .is-ready { border-color: #2ecc71; box-shadow: 0 0 10px #2ecc71; }
+        .card-row { display: grid; grid-template-columns: repeat(3, 35px); grid-template-rows: repeat(2, 50px); gap: 4px; margin-top: 5px; }
+        .card-img { width: 35px; height: 50px; border-radius: 4px; background: white; transition: 0.2s; }
+        .card-img.active { border: 3px solid var(--gold); transform: scale(1.15); box-shadow: 0 0 15px var(--gold); }
+        .controls-bar { background: #111; border-top: 1px solid #333; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 10px 10px calc(var(--safe-bottom) + 10px); }
+        button { padding: 15px 0; border: none; border-radius: 10px; font-weight: bold; font-size: 9px; color: white; cursor: pointer; }
+        .btn-gold { background: var(--gold); color: #000; }
+        .btn-blue { background: #2980b9; }
+        .btn-green { background: #27ae60; }
+        .btn-red { background: #c0392b; }
+        #login-screen, .modal { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .login-input { width: 85%; max-width: 300px; padding: 14px; margin-bottom: 10px; border-radius: 10px; border: 1px solid var(--gold); background: #111; color: white; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div id="login-screen">
+    <h1 style="color:var(--gold)">TOS LENG</h1>
+    <input id="roomInput" class="login-input" placeholder="Room Name">
+    <input id="nameInput" class="login-input" placeholder="Your Name">
+    <input id="moneyInput" class="login-input" type="number" value="50000">
+    <button onclick="window.join()" class="btn-gold" style="width:85%; max-width:300px; font-size:16px;">START</button>
+</div>
+
+<div id="room-info-bar">
+    <span id="display-room">TABLE: -</span>
+    <span id="btn-leave" onclick="window.logout()">LEAVE / ចាកចេញ</span>
+</div>
+
+<div id="game-wrapper">
+    <div id="poker-table"></div>
+    <div class="controls-bar">
+        <button class="btn-gold" onclick="window.openTransfer()">MONEY</button>
+        <button class="btn-gold" onclick="document.getElementById('chat-panel').classList.add('open')">CHAT</button>
+        <button id="dealBtn" class="btn-blue" onclick="window.deal()">DEAL</button>
+        <button id="readyBtn" class="btn-green" style="display:none;" onclick="window.toggleReady(true)">READY</button>
+        <button id="notReadyBtn" class="btn-blue" style="display:none; background:#555;" onclick="window.toggleReady(false)">UNREADY</button>
+        <button class="btn-gold" style="background:#d35400" onclick="window.reveal()">REVEAL</button>
+        <button class="btn-red" onclick="window.resetGame()">RESET</button>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, set, update, onValue, get, push, runTransaction, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const db = getDatabase(initializeApp({
+        apiKey: "AIzaSyBjsVUxlNjGUnYioHOlKmk1wEMoVTSVxLw",
+        databaseURL: "https://the-family-card-game-default-rtdb.asia-southeast1.firebasedatabase.app"
+    }));
+
+    let room, player, selectedIdx = null;
+
+    window.join = async () => {
+        room = document.getElementById("roomInput").value.trim().toLowerCase();
+        player = document.getElementById("nameInput").value.trim();
+        if(!room || !player) return alert("Enter Name & Room");
+        await set(ref(db, `rooms/${room}/players/${player}`), []);
+        document.getElementById("login-screen").style.display = "none";
+        listen();
+    };
+
+    window.logout = async () => {
+        await remove(ref(db, `rooms/${room}/players/${player}`));
+        window.location.reload();
+    };
+
+    window.swapCards = async (a, b) => {
+        const pRef = ref(db, `rooms/${room}/players/${player}`);
+        const snap = await get(pRef);
+        let c = snap.val();
+        [c[a], c[b]] = [c[b], c[a]];
+        await set(pRef, c);
+    };
+
+    function listen() {
+        onValue(ref(db, `rooms/${room}`), snap => {
+            const data = snap.val() || {};
+            const table = document.getElementById("poker-table");
+            table.innerHTML = "";
+            const players = data.players || {};
+            Object.keys(players).forEach((p, i) => {
+                const spot = document.createElement("div");
+                spot.className = "player-spot";
+                // Simplified positioning
+                spot.style.left = (20 + (i * 20)) + "%"; 
+                spot.style.top = "50%";
+                
+                const cardsDiv = document.createElement("div");
+                cardsDiv.className = "card-row";
+                players[p].forEach((c, idx) => {
+                    const img = document.createElement("img");
+                    img.className = "card-img" + (p === player && selectedIdx === idx ? " active" : "");
+                    img.src = (p === player || c.faceUp) ? `https://deckofcardsapi.com/static/img/${c.val.replace(/[♠♥♦♣]/g, '').replace('10','0')}${{'♠':'S','♥':'H','♦':'D','♣':'C'}[c.val.slice(-1)]}.png` : "https://deckofcardsapi.com/static/img/back.png";
+                    if(p === player) img.onclick = () => {
+                        if(selectedIdx === null) { selectedIdx = idx; listen(); }
+                        else { window.swapCards(selectedIdx, idx); selectedIdx = null; listen(); }
+                    };
+                    cardsDiv.appendChild(img);
+                });
+                spot.appendChild(cardsDiv);
+                table.appendChild(spot);
+            });
+        });
+    }
+
+    // Assign helper functions to window
+    window.deal = () => { /* Add your deal logic */ };
+    window.reveal = () => { /* Add your reveal logic */ };
     window.resetGame = () => { set(ref(db, `rooms/${room}/players`), null); };
+    window.toggleReady = (s) => set(ref(db, `rooms/${room}/readyStatus/${player}`), s);
+</script>
+</body>
+</html>
     window.toggleReady = (s) => set(ref(db, `rooms/${room}/readyStatus/${player}`), s);
 </script>
 </body>
