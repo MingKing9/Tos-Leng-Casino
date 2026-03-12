@@ -299,9 +299,7 @@ window.logout = async () => {
 
     window.resetGame = () => { if(confirm("Clear cards?")) { set(ref(db, `rooms/${room}/players`), null); set(ref(db, `rooms/${room}/readyStatus`), null); } };
     window.toggleReady = (s) => set(ref(db, `rooms/${room}/readyStatus/${player}`), s);
-</script>
-</body>
-        // Add this in your <head> or bottom of <body>
+            // Add this in your <head> or bottom of <body>
 <audio id="sound-deal" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3"></audio>
 <audio id="sound-money" src="https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3"></audio>
 
@@ -316,4 +314,6 @@ function confirmTransfer() {
     document.getElementById("sound-money").play(); // Plays the "ding" sound
     // ...
 }
+</script>
+</body>
 </html>
