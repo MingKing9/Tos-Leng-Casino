@@ -74,40 +74,39 @@
     let room, player;
 
    window.join = async function() {
-        const inputRoom = document.getElementById("roomInput").value.trim().toLowerCase();
-        const inputPlayer = document.getElementById("nameInput").value.trim();
-        const typedMoney = parseInt(document.getElementById("moneyInput").value) || 50000;
+        room = document.getElementById("roomInput").value.trim().toLowerCase();
+        player = document.getElementById("nameInput").value.trim();
+        const money = parseInt(document.getElementById("moneyInput").value) || 50000;
         
-        if(!inputRoom || !inputPlayer) return alert("Enter Name & Room");
-
-        room = inputRoom;
-        player = inputPlayer;
+        if(!room || !player) return alert("Enter Name & Room");
 
         const walletRef = ref(db, `rooms/${room}/wallets/${player}`);
-        const snap = await get(walletRef);
-
-        if (!snap.exists()) {
-            await set(walletRef, typedMoney);
-        }
-
-        // --- THE FIX: ADD TO ACTIVE PLAYERS IMMEDIATELY ---
-        // This ensures the player shows up on the table as soon as they log in
-        await set(ref(db, `rooms/${room}/players/${player}`), []); 
+        const playerRef = ref(db, `rooms/${room}/players/${player}`);
         
+        const snap = await get(walletRef);
+        if (!snap.exists()) await set(walletRef, money);
+
+        // Explicitly set the player as an empty array to "check in"
+        await set(playerRef, []); 
+
         document.getElementById("login-screen").style.display = "none";
         document.getElementById("display-room").innerText = "TABLE: " + room.toUpperCase();
         
+        console.log("Joined Room:", room, "as:", player);
         listen();
         listenChat();
     };
 
     function listen() {
+        // Look at the specific room
         onValue(ref(db, `rooms/${room}`), snap => {
-            const data = snap.val() || {};
+            const data = snap.val();
+            if (!data) return;
+            
             const table = document.getElementById("poker-table");
             table.innerHTML = "";
             
-            // Show players who are currently active (have an entry in the players folder)
+            // Only players who have 'checked in' at the table
             const activePlayers = data.players || {}; 
             const playerNames = Object.keys(activePlayers);
 
@@ -118,14 +117,14 @@
                 spot.style.left = (50 + 35 * Math.cos(angle)) + "%";
                 spot.style.top = (50 + 35 * Math.sin(angle)) + "%";
 
-                const isReady = data.readyStatus && data.readyStatus[p];
                 const money = (data.wallets && data.wallets[p]) ? data.wallets[p] : 0;
+                const isReady = data.readyStatus && data.readyStatus[p];
                 
-                spot.innerHTML = `<div class="player-badge ${isReady ? 'is-ready' : ''}"><b>${p === player ? "YOU" : p}</b><br>${money.toLocaleString()}៛</div>`;
+                spot.innerHTML = `<div class="player-badge ${isReady ? 'is-ready' : ''}"><b>${p}</b><br>${money.toLocaleString()}៛</div>`;
                 
                 const cardsDiv = document.createElement("div");
                 cardsDiv.className = "card-row";
-                if (activePlayers[p] && activePlayers[p].length > 0) {
+                if (activePlayers[p] && Array.isArray(activePlayers[p])) {
                     activePlayers[p].forEach(c => {
                         const img = document.createElement("img");
                         img.className = "card-img";
@@ -136,13 +135,6 @@
                 spot.appendChild(cardsDiv);
                 table.appendChild(spot);
             });
-            
-            // Keep the control buttons logic
-            const hasCards = (activePlayers[player] && activePlayers[player].length > 0);
-            const isReady = (data.readyStatus && data.readyStatus[player]);
-            document.getElementById("dealBtn").style.display = hasCards ? "none" : "block";
-            document.getElementById("readyBtn").style.display = (hasCards && !isReady) ? "block" : "none";
-            document.getElementById("notReadyBtn").style.display = (hasCards && isReady) ? "block" : "none";
         });
     }
 
