@@ -127,33 +127,28 @@
     let room, player;
     let selectedIdx = null;
 
-    window.join = async function() {
-        const inputRoom = document.getElementById("roomInput").value.trim().toLowerCase();
-        const inputPlayer = document.getElementById("nameInput").value.trim();
-        const typedMoney = parseInt(document.getElementById("moneyInput").value) || 50000;
-        if(!inputRoom || !inputPlayer) return alert("Enter Name & Room");
-        room = inputRoom; player = inputPlayer;
-        const walletRef = ref(db, `rooms/${room}/wallets/${player}`);
-        const snap = await get(walletRef);
-        if (snap.exists()) {
-            const keep = confirm(`History Found for ${player}!\nSaved Balance: ${snap.val().toLocaleString()}៛\n\nOK = Continue\nCancel = Reset`);
-            if (!keep) await set(walletRef, typedMoney);
-        } else { await set(walletRef, typedMoney); }
+    window.join = function() {
+        room = document.getElementById("roomInput").value.trim().toLowerCase();
+        player = document.getElementById("nameInput").value.trim();
+        const money = parseInt(document.getElementById("moneyInput").value) || 50000;
+        if(!room || !player) return alert("Fill Name & Room");
+
+        set(ref(db, `rooms/${room}/wallets/${player}`), money);
         document.getElementById("login-screen").style.display = "none";
-        document.getElementById("display-room").innerText = "TABLE: " + room.toUpperCase();
-        listen(); listenChat();
+        document.getElementById("display-room").innerText = room.toUpperCase();
+        document.getElementById("display-name").innerText = player.toUpperCase();
+        
+        listen();
+        listenChat();
     };
 
-window.logout = async () => {
-        if(confirm("Exit the table?")) {
-            // Remove everything associated with this player
+    // --- FIX 1: LOGOUT LOGIC ---
+    window.logout = async () => {
+        if(confirm("Confirm: Leave this table?")) {
+            await remove(ref(db, `rooms/${room}/wallets/${player}`));
             await remove(ref(db, `rooms/${room}/players/${player}`));
             await remove(ref(db, `rooms/${room}/readyStatus/${player}`));
-            await remove(ref(db, `rooms/${room}/wallets/${player}`)); // THIS removes the name from the table
-            
-            room = null;
-            player = null;
-            window.location.reload(true); 
+            location.reload(); // Hard refresh to login screen
         }
     };
 
