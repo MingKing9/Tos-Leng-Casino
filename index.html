@@ -112,47 +112,57 @@
     let selectedIdx = null; // To track card selection
 
     window.join = async function() {
-    room = document.getElementById("roomInput").value.trim().toLowerCase();
-    player = document.getElementById("nameInput").value.trim();
+    // Get fresh values from the inputs
+    const inputRoom = document.getElementById("roomInput").value.trim().toLowerCase();
+    const inputPlayer = document.getElementById("nameInput").value.trim();
     const typedMoney = parseInt(document.getElementById("moneyInput").value) || 50000;
     
-    if(!room || !player) return alert("Enter Name & Room");
+    if(!inputRoom || !inputPlayer) return alert("Enter Name & Room");
+
+    // Assign to global variables
+    room = inputRoom;
+    player = inputPlayer;
 
     const walletRef = ref(db, `rooms/${room}/wallets/${player}`);
     
-    // Get the data once
+    // FORCE a fresh check from the server
     const snap = await get(walletRef);
 
     if (snap.exists()) {
         const savedAmount = snap.val();
-        // Ask to continue
-        const keep = confirm(`Found your history!\nBalance: ${savedAmount.toLocaleString()}៛\n\nOK = Continue with this money\nCancel = Reset to ${typedMoney.toLocaleString()}៛`);
+        // This popup MUST appear if the data exists in Firebase
+        const keep = confirm(`History Found for ${player}!\nSaved Balance: ${savedAmount.toLocaleString()}៛\n\nOK = Continue with saved money\nCancel = Reset to ${typedMoney.toLocaleString()}៛`);
         
         if (keep) {
-            // Do nothing, just use the savedAmount already in the DB
+            // Keep the database as is
         } else {
-            // User wants to reset, so we overwrite
+            // Overwrite with the new number
             await set(walletRef, typedMoney);
         }
     } else {
-        // Brand new player, set the wallet for the first time
+        // New player
         await set(walletRef, typedMoney);
     }
 
+    // Hide login and start game
     document.getElementById("login-screen").style.display = "none";
     document.getElementById("display-room").innerText = "TABLE: " + room.toUpperCase();
+    
     listen();
     listenChat();
 };
 window.logout = async () => {
-    if(confirm("Exit the table? (Your money will be saved for next time)")) {
-        // We REMOVE cards and ready status so you disappear from the table
+    if(confirm("Exit the table? (Your money will be saved)")) {
+        // 1. Remove from active table
         await remove(ref(db, `rooms/${room}/players/${player}`));
         await remove(ref(db, `rooms/${room}/readyStatus/${player}`));
         
-        // We DO NOT remove the wallet. We leave it so it can be found later.
-        
-        location.reload(); 
+        // 2. Clear local variables
+        room = null;
+        player = null;
+
+        // 3. FORCE HARD REFRESH (This is the most important part)
+        window.location.reload(true); 
     }
 };
 
