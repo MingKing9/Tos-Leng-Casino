@@ -58,22 +58,39 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, update, onValue, get, push, runTransaction, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, set, update, onValue, get, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    const db = getDatabase(initializeApp({
+    // 1. Initialize Firebase
+    const app = initializeApp({
         apiKey: "AIzaSyBjsVUxlNjGUnYioHOlKmk1wEMoVTSVxLw",
         databaseURL: "https://the-family-card-game-default-rtdb.asia-southeast1.firebasedatabase.app"
-    }));
+    });
+    const db = getDatabase(app);
 
-    let room, player, selectedIdx = null;
+    // 2. Make variables global so your buttons can reach them
+    window.db = db;
+    window.ref = ref;
+    window.set = set;
+    window.update = update;
+    window.onValue = onValue;
+    window.get = get;
+    window.remove = remove;
 
+    // 3. Simple Join Function
     window.join = async () => {
-        room = document.getElementById("roomInput").value.trim().toLowerCase();
-        player = document.getElementById("nameInput").value.trim();
+        const room = document.getElementById("roomInput").value.trim().toLowerCase();
+        const player = document.getElementById("nameInput").value.trim();
+        
         if(!room || !player) return alert("Enter Name & Room");
+        
+        window.room = room;
+        window.player = player;
+
+        // Force join by creating an entry
         await set(ref(db, `rooms/${room}/players/${player}`), []);
         document.getElementById("login-screen").style.display = "none";
-        listen();
+        
+        console.log("Joined as " + player);
     };
 
     window.logout = async () => {
@@ -248,7 +265,13 @@
     // Assign helper functions to window
     window.deal = () => { /* Add your deal logic */ };
     window.reveal = () => { /* Add your reveal logic */ };
-    window.resetGame = () => { set(ref(db, `rooms/${room}/players`), null); };
+window.resetGame = async () => {
+        if(!window.room) return;
+        const snap = await get(ref(db, `rooms/${window.room}/players`));
+        let updates = {};
+        snap.forEach(child => { updates[`rooms/${window.room}/players/${child.key}`] = []; });
+        await update(ref(db), updates);
+    };
     window.toggleReady = (s) => set(ref(db, `rooms/${room}/readyStatus/${player}`), s);
 </script>
 </body>
