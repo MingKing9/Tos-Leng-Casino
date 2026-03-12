@@ -73,23 +73,78 @@
     const db = getDatabase(app);
     let room, player;
 
-    window.join = async function() {
-        room = document.getElementById("roomInput").value.trim().toLowerCase();
-        player = document.getElementById("nameInput").value.trim();
-        const money = parseInt(document.getElementById("moneyInput").value) || 50000;
-        if(!room || !player) return alert("Enter Name & Room");
+   window.join = async function() {
+        const inputRoom = document.getElementById("roomInput").value.trim().toLowerCase();
+        const inputPlayer = document.getElementById("nameInput").value.trim();
+        const typedMoney = parseInt(document.getElementById("moneyInput").value) || 50000;
+        
+        if(!inputRoom || !inputPlayer) return alert("Enter Name & Room");
+
+        room = inputRoom;
+        player = inputPlayer;
 
         const walletRef = ref(db, `rooms/${room}/wallets/${player}`);
         const snap = await get(walletRef);
-        if (!snap.exists()) await set(walletRef, money);
 
+        if (!snap.exists()) {
+            await set(walletRef, typedMoney);
+        }
+
+        // --- THE FIX: ADD TO ACTIVE PLAYERS IMMEDIATELY ---
+        // This ensures the player shows up on the table as soon as they log in
+        await set(ref(db, `rooms/${room}/players/${player}`), []); 
+        
         document.getElementById("login-screen").style.display = "none";
         document.getElementById("display-room").innerText = "TABLE: " + room.toUpperCase();
         
-        // Mark player as active at the table
-        await set(ref(db, `rooms/${room}/players/${player}`), []); 
         listen();
+        listenChat();
     };
+
+    function listen() {
+        onValue(ref(db, `rooms/${room}`), snap => {
+            const data = snap.val() || {};
+            const table = document.getElementById("poker-table");
+            table.innerHTML = "";
+            
+            // Show players who are currently active (have an entry in the players folder)
+            const activePlayers = data.players || {}; 
+            const playerNames = Object.keys(activePlayers);
+
+            playerNames.forEach((p, i) => {
+                const angle = (i * (360 / playerNames.length)) * (Math.PI / 180);
+                const spot = document.createElement("div");
+                spot.className = "player-spot";
+                spot.style.left = (50 + 35 * Math.cos(angle)) + "%";
+                spot.style.top = (50 + 35 * Math.sin(angle)) + "%";
+
+                const isReady = data.readyStatus && data.readyStatus[p];
+                const money = (data.wallets && data.wallets[p]) ? data.wallets[p] : 0;
+                
+                spot.innerHTML = `<div class="player-badge ${isReady ? 'is-ready' : ''}"><b>${p === player ? "YOU" : p}</b><br>${money.toLocaleString()}៛</div>`;
+                
+                const cardsDiv = document.createElement("div");
+                cardsDiv.className = "card-row";
+                if (activePlayers[p] && activePlayers[p].length > 0) {
+                    activePlayers[p].forEach(c => {
+                        const img = document.createElement("img");
+                        img.className = "card-img";
+                        img.src = (p === player || c.faceUp) ? getCardImg(c.val) : "https://deckofcardsapi.com/static/img/back.png";
+                        cardsDiv.appendChild(img);
+                    });
+                }
+                spot.appendChild(cardsDiv);
+                table.appendChild(spot);
+            });
+            
+            // Keep the control buttons logic
+            const hasCards = (activePlayers[player] && activePlayers[player].length > 0);
+            const isReady = (data.readyStatus && data.readyStatus[player]);
+            document.getElementById("dealBtn").style.display = hasCards ? "none" : "block";
+            document.getElementById("readyBtn").style.display = (hasCards && !isReady) ? "block" : "none";
+            document.getElementById("notReadyBtn").style.display = (hasCards && isReady) ? "block" : "none";
+        });
+    }
 
     window.logout = async () => {
         if(confirm("Exit the table?")) {
