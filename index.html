@@ -100,14 +100,19 @@
         }
     };
 
-    window.leaveGame = () => {
+  window.leaveGame = async () => {
     if (confirm("Are you sure you want to leave the table?")) {
-        // This removes them from the game view, but their money stays safe!
-        set(ref(db, `rooms/${room}/players/${player}`), null);
-        set(ref(db, `rooms/${room}/readyStatus/${player}`), null);
-        
-        // This refreshes the page so the player sees the login screen
-        location.reload(); 
+        try {
+            // 1. Delete the data and WAIT for the server to confirm
+            await set(ref(db, `rooms/${room}/players/${player}`), null);
+            await set(ref(db, `rooms/${room}/readyStatus/${player}`), null);
+            
+            // 2. ONLY after the server confirms, refresh the page
+            location.reload();
+        } catch (error) {
+            console.error("Error leaving game: ", error);
+            alert("Something went wrong. Please check the console.");
+        }
     }
 };
 
