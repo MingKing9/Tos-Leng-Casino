@@ -1,185 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
 <meta charset="UTF-8">
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Tos Leng</title>
 
 <style>
+:root{--gold:#d4af37;--felt:#1a5e37;--wood:#3d2b1f;}
 
-:root{
---gold:#d4af37;
---felt:#1a5e37;
---wood:#3d2b1f;
-}
-
-body,html{
-margin:0;
-height:100%;
-overflow:hidden;
-background:#000;
-font-family:Arial;
-}
-
-#room-info-bar{
-position:fixed;
-top:0;
-width:100%;
-height:40px;
-background:#000;
-color:var(--gold);
-display:flex;
-justify-content:space-between;
-align-items:center;
-padding:0 10px;
-border-bottom:1px solid #444;
-}
-
-#game-wrapper{
-display:flex;
-flex-direction:column;
-height:100vh;
-background:radial-gradient(circle,var(--felt),#0a2114);
-}
-
-#poker-table{
-flex:1;
-margin:50px 10px 10px 10px;
-border:8px solid var(--wood);
-border-radius:50px;
-position:relative;
-}
-
-.player-spot{
-position:absolute;
-transform:translate(-50%,-50%);
-display:flex;
-flex-direction:column;
-align-items:center;
-}
-
-.player-badge{
-background:rgba(0,0,0,0.8);
-color:white;
-padding:5px;
-border-radius:10px;
-border:1px solid var(--gold);
-font-size:11px;
-text-align:center;
-}
-
-.card-row{
-display:grid;
-grid-template-columns:repeat(3,35px);
-grid-template-rows:repeat(2,50px);
-gap:4px;
-margin-top:5px;
-}
-
-.card-img{
-width:35px;
-height:50px;
-border-radius:4px;
-}
-
-.controls-bar{
-background:#111;
-display:grid;
-grid-template-columns:1fr 1fr 1fr;
-gap:8px;
-padding:10px;
-border-top:1px solid #333;
-}
-
-button{
-padding:10px;
-border:none;
-border-radius:10px;
-font-weight:bold;
-color:white;
-}
-
-.btn-gold{background:var(--gold);color:black;}
-.btn-blue{background:#2980b9;}
-.btn-green{background:#27ae60;}
-.btn-red{background:#c0392b;}
+body,html{margin:0;height:100%;background:#000;color:white;font-family:Arial}
 
 #login-screen{
-position:fixed;
-inset:0;
-background:black;
-display:flex;
-flex-direction:column;
-align-items:center;
-justify-content:center;
-z-index:9999;
+position:fixed;inset:0;background:black;display:flex;flex-direction:column;
+align-items:center;justify-content:center
 }
 
 .login-input{
-width:85%;
-max-width:300px;
-padding:12px;
-margin-bottom:10px;
-border-radius:10px;
-border:1px solid var(--gold);
-background:#111;
-color:white;
-text-align:center;
+width:250px;padding:10px;margin:5px;border-radius:8px;border:1px solid var(--gold);
+background:#111;color:white;text-align:center
 }
 
-#chat-panel{
-position:fixed;
-right:-300px;
-top:0;
-width:280px;
-height:100%;
-background:#111;
-transition:0.3s;
-display:flex;
-flex-direction:column;
+#room-info-bar{
+position:fixed;top:0;width:100%;background:black;color:var(--gold);
+display:flex;justify-content:space-between;padding:5px 10px;border-bottom:1px solid #333
 }
 
-#chat-panel.open{right:0;}
+#logoutBtn{background:#c0392b;border:none;color:white;padding:5px 10px;border-radius:6px}
 
-#chat-msgs{
-flex:1;
-overflow-y:auto;
-padding:10px;
-color:white;
+#game-wrapper{height:100vh;padding-top:40px;display:flex;flex-direction:column}
+
+#poker-table{
+flex:1;margin:10px;border:8px solid var(--wood);border-radius:40px;
+position:relative;background:radial-gradient(circle,var(--felt),#0a2114)
 }
 
+.player-spot{position:absolute;transform:translate(-50%,-50%);text-align:center}
+
+.player-badge{
+background:rgba(0,0,0,.8);padding:5px;border-radius:10px;border:1px solid var(--gold)
+}
+
+.card-row{display:grid;grid-template-columns:repeat(3,35px);grid-template-rows:repeat(2,50px);gap:4px;margin-top:5px}
+
+.card-img{width:35px;height:50px;border-radius:4px}
+
+.controls-bar{
+background:#111;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:10px
+}
+
+button{padding:10px;border:none;border-radius:8px;font-weight:bold}
+
+.btn-gold{background:var(--gold);color:black}
+.btn-blue{background:#2980b9;color:white}
+.btn-green{background:#27ae60;color:white}
+.btn-red{background:#c0392b;color:white}
+
+#transfer-panel{
+position:fixed;inset:0;background:#000d;display:none;align-items:center;justify-content:center
+}
+
+.transfer-box{
+background:#111;padding:20px;border-radius:10px;border:1px solid var(--gold);text-align:center
+}
 </style>
-
 </head>
 
 <body>
 
 <div id="login-screen">
-
 <h2 style="color:var(--gold)">TOS LENG</h2>
-
 <input id="roomInput" class="login-input" placeholder="Room">
-
 <input id="nameInput" class="login-input" placeholder="Name">
-
 <input id="moneyInput" class="login-input" type="number" value="50000">
-
-<button onclick="join()" class="btn-gold login-input">START</button>
-
+<button onclick="join()" class="login-input btn-gold">START</button>
 </div>
 
 <div id="room-info-bar">
-
-<span id="display-room">Room</span>
-
-<span id="display-name">Player</span>
-
-<button onclick="logout()" class="btn-red">Logout</button>
-
+<span id="display-room"></span>
+<span id="display-name"></span>
+<button id="logoutBtn" onclick="logout()">Logout</button>
 </div>
 
 <div id="game-wrapper">
@@ -187,78 +86,61 @@ color:white;
 <div id="poker-table"></div>
 
 <div class="controls-bar">
-
 <button class="btn-gold" onclick="openTransfer()">Money</button>
-
-<button class="btn-gold" onclick="openChat()">Chat</button>
-
-<button id="dealBtn" class="btn-blue" onclick="deal()">Deal</button>
-
+<button class="btn-blue" onclick="deal()">Deal</button>
 <button id="readyBtn" class="btn-green" onclick="toggleReady()">Ready</button>
-
 <button class="btn-gold" onclick="reveal()">Reveal</button>
-
 <button class="btn-red" onclick="resetGame()">Reset</button>
-
 </div>
 
 </div>
 
-<div id="chat-panel">
-
-<div style="padding:10px;color:var(--gold)">Chat</div>
-
-<div id="chat-msgs"></div>
-
-<div style="display:flex;padding:5px">
-
-<input id="chatInp" style="flex:1">
-
-<button onclick="sendChat()">Send</button>
-
+<div id="transfer-panel">
+<div class="transfer-box">
+<h3>Transfer</h3>
+<select id="transferTo"></select><br><br>
+<input id="transferAmount" type="number" placeholder="Amount"><br><br>
+<button onclick="confirmTransfer()" class="btn-green">Send</button>
+<button onclick="closeTransfer()" class="btn-red">Cancel</button>
 </div>
-
 </div>
 
 <script type="module">
 
-import{initializeApp}from"https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import{getDatabase,ref,set,update,onValue,get,push,runTransaction}from"https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"
+import{getDatabase,ref,set,onValue,get,update,push,runTransaction}from"https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js"
 
 const firebaseConfig={
 apiKey:"AIzaSyBjsVUxlNjGUnYioHOlKmk1wEMoVTSVxLw",
 authDomain:"the-family-card-game.firebaseapp.com",
 databaseURL:"https://the-family-card-game-default-rtdb.asia-southeast1.firebasedatabase.app",
 projectId:"the-family-card-game"
-};
+}
 
-const app=initializeApp(firebaseConfig);
-const db=getDatabase(app);
+const app=initializeApp(firebaseConfig)
+const db=getDatabase(app)
 
-let room,player,selectedIdx=null;
+let room,player,selected=null
 
 window.join=async function(){
 
-room=document.getElementById("roomInput").value.trim().toLowerCase();
-player=document.getElementById("nameInput").value.trim();
-let money=parseInt(document.getElementById("moneyInput").value)||50000;
+room=document.getElementById("roomInput").value.trim().toLowerCase()
+player=document.getElementById("nameInput").value.trim()
+let money=parseInt(document.getElementById("moneyInput").value)||50000
 
-if(!room||!player)return;
+if(!room||!player)return
 
-const walletRef=ref(db,`rooms/${room}/wallets/${player}`);
-const snap=await get(walletRef);
+const walletRef=ref(db,`rooms/${room}/wallets/${player}`)
+const snap=await get(walletRef)
 
-if(!snap.exists()){
-set(walletRef,money);
-}
+if(!snap.exists())await set(walletRef,money)
 
-document.getElementById("login-screen").style.display="none";
+document.getElementById("login-screen").style.display="none"
 
-document.getElementById("display-room").innerText="Room: "+room;
-document.getElementById("display-name").innerText="Player: "+player;
+document.getElementById("display-room").innerText="Room: "+room
+document.getElementById("display-name").innerText="Player: "+player
 
-listen();
-listenChat();
+listen()
 
 }
 
@@ -266,237 +148,208 @@ function listen(){
 
 onValue(ref(db,`rooms/${room}`),snap=>{
 
-const data=snap.val()||{};
-const table=document.getElementById("poker-table");
+const data=snap.val()||{}
+const wallets=data.wallets||{}
+const table=document.getElementById("poker-table")
 
-table.innerHTML="";
+table.innerHTML=""
 
-const wallets=data.wallets||{};
-const players=Object.keys(wallets);
+const players=Object.keys(wallets)
 
 players.forEach((p,i)=>{
 
-const angle=(i*(360/players.length))*Math.PI/180;
+const angle=(i*(360/players.length))*Math.PI/180
 
-const spot=document.createElement("div");
-spot.className="player-spot";
+const spot=document.createElement("div")
+spot.className="player-spot"
 
-spot.style.left=(50+35*Math.cos(angle))+"%";
-spot.style.top=(50+35*Math.sin(angle))+"%";
+spot.style.left=(50+35*Math.cos(angle))+"%"
+spot.style.top=(50+35*Math.sin(angle))+"%"
 
-const ready=data.readyStatus&&data.readyStatus[p];
+const ready=data.readyStatus&&data.readyStatus[p]
 
-const badge=document.createElement("div");
-badge.className="player-badge";
+const badge=document.createElement("div")
+badge.className="player-badge"
 
-badge.innerHTML=`${p}${ready?" ✓":""}<br>${wallets[p]}៛`;
+badge.innerHTML=`${p}${ready?" ✓":""}<br>${wallets[p]}៛`
 
-spot.appendChild(badge);
+spot.appendChild(badge)
 
-const cardsDiv=document.createElement("div");
-cardsDiv.className="card-row";
+const cardsDiv=document.createElement("div")
+cardsDiv.className="card-row"
 
 if(data.players&&data.players[p]){
 
-data.players[p].forEach((c,idx)=>{
+data.players[p].forEach((c,i)=>{
 
-const img=document.createElement("img");
-img.className="card-img";
+const img=document.createElement("img")
+img.className="card-img"
 
-if(c.faceUp||p===player){
-img.src=getCardImg(c.val);
-}else{
-img.src="https://deckofcardsapi.com/static/img/back.png";
-}
+img.src=(c.faceUp||p===player)?getCardImg(c.val):
+"https://deckofcardsapi.com/static/img/back.png"
 
 if(p===player&&!ready&&!c.faceUp){
-
 img.onclick=()=>{
 
-if(selectedIdx===null){
-selectedIdx=idx;
-}else{
-swapCards(selectedIdx,idx);
-selectedIdx=null;
+if(selected===null)selected=i
+else{
+swap(selected,i)
+selected=null
 }
 
-};
-
+}
 }
 
-cardsDiv.appendChild(img);
+cardsDiv.appendChild(img)
 
-});
-
-}
-
-spot.appendChild(cardsDiv);
-
-table.appendChild(spot);
-
-});
-
-});
+})
 
 }
 
-async function swapCards(a,b){
+spot.appendChild(cardsDiv)
+table.appendChild(spot)
 
-const pRef=ref(db,`rooms/${room}/players/${player}`);
+})
 
-const snap=await get(pRef);
+})
 
-let c=snap.val();
+}
 
-[c[a],c[b]]=[c[b],c[a]];
+async function swap(a,b){
 
-set(pRef,c);
+const pRef=ref(db,`rooms/${room}/players/${player}`)
+const snap=await get(pRef)
+
+let c=snap.val()
+
+[c[a],c[b]]=[c[b],c[a]]
+
+set(pRef,c)
 
 }
 
 window.deal=function(){
 
-const s=["♠","♥","♦","♣"];
-const v=["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+const s=["♠","♥","♦","♣"]
+const v=["A","2","3","4","5","6","7","8","9","10","J","Q","K"]
 
-let d=[];
-s.forEach(si=>v.forEach(vi=>d.push(vi+si)));
+let deck=[]
+s.forEach(si=>v.forEach(vi=>deck.push(vi+si)))
 
-d=d.sort(()=>Math.random()-0.5);
+deck=deck.sort(()=>Math.random()-0.5)
 
-let cards=d.slice(0,6).map(val=>({val,faceUp:false}));
+let cards=deck.slice(0,6).map(val=>({val,faceUp:false}))
 
-set(ref(db,`rooms/${room}/players/${player}`),cards);
-
-set(ref(db,`rooms/${room}/readyStatus/${player}`),false);
+set(ref(db,`rooms/${room}/players/${player}`),cards)
+set(ref(db,`rooms/${room}/readyStatus/${player}`),false)
 
 }
 
 window.toggleReady=function(){
 
-const rRef=ref(db,`rooms/${room}/readyStatus/${player}`);
+const rRef=ref(db,`rooms/${room}/readyStatus/${player}`)
 
 get(rRef).then(s=>{
-set(rRef,!s.val());
-});
+
+const ready=s.val()
+
+set(rRef,!ready)
+
+document.getElementById("readyBtn").innerText=ready?"Ready":"Unready"
+
+})
 
 }
 
 window.reveal=function(){
 
-get(ref(db,`rooms/${room}/players`)).then(snap=>{
+get(ref(db,`rooms/${room}/players`)).then(s=>{
 
-let d=snap.val();
-
-let up={};
+let d=s.val()
+let up={}
 
 for(let p in d){
 d[p].forEach((c,i)=>{
-up[`rooms/${room}/players/${p}/${i}/faceUp`]=true;
-});
+up[`rooms/${room}/players/${p}/${i}/faceUp`]=true
+})
 }
 
-update(ref(db),up);
+update(ref(db),up)
 
-});
+})
 
 }
 
 window.resetGame=function(){
 
-set(ref(db,`rooms/${room}/players`),null);
-set(ref(db,`rooms/${room}/readyStatus`),null);
+set(ref(db,`rooms/${room}/players`),null)
+set(ref(db,`rooms/${room}/readyStatus`),null)
 
 }
 
 window.logout=function(){
 
-set(ref(db,`rooms/${room}/players/${player}`),null);
-set(ref(db,`rooms/${room}/readyStatus/${player}`),null);
+set(ref(db,`rooms/${room}/players/${player}`),null)
+set(ref(db,`rooms/${room}/readyStatus/${player}`),null)
 
-location.reload();
-
-}
-
-window.openTransfer=function(){
-
-const to=prompt("Send to:");
-const amt=parseInt(prompt("Amount"));
-
-if(!to||!amt)return;
-
-runTransaction(ref(db,`rooms/${room}/wallets/${player}`),c=>(c||0)-amt);
-runTransaction(ref(db,`rooms/${room}/wallets/${to}`),c=>(c||0)+amt);
-
-push(ref(db,`rooms/${room}/history`),{
-from:player,
-to:to,
-amount:amt,
-time:Date.now()
-});
+location.reload()
 
 }
 
-window.openChat=function(){
-document.getElementById("chat-panel").classList.toggle("open");
+window.openTransfer=async function(){
+
+const sel=document.getElementById("transferTo")
+sel.innerHTML=""
+
+const snap=await get(ref(db,`rooms/${room}/wallets`))
+const users=snap.val()
+
+for(let u in users){
+if(u!==player){
+let o=document.createElement("option")
+o.value=u
+o.innerText=u
+sel.appendChild(o)
+}
 }
 
-window.sendChat=function(){
-
-const inp=document.getElementById("chatInp");
-
-if(!inp.value.trim())return;
-
-push(ref(db,`rooms/${room}/chats`),{
-u:player,
-m:inp.value,
-t:Date.now()
-});
-
-inp.value="";
+document.getElementById("transfer-panel").style.display="flex"
 
 }
 
-function listenChat(){
+window.closeTransfer=function(){
+document.getElementById("transfer-panel").style.display="none"
+}
 
-onValue(ref(db,`rooms/${room}/chats`),snap=>{
+window.confirmTransfer=function(){
 
-const area=document.getElementById("chat-msgs");
+const to=document.getElementById("transferTo").value
+const amt=parseInt(document.getElementById("transferAmount").value)
 
-area.innerHTML="";
+if(!to||!amt)return
 
-const data=snap.val();
+runTransaction(ref(db,`rooms/${room}/wallets/${player}`),c=>(c||0)-amt)
+runTransaction(ref(db,`rooms/${room}/wallets/${to}`),c=>(c||0)+amt)
 
-if(!data)return;
+push(ref(db,`rooms/${room}/history`),{from:player,to,amount:amt,time:Date.now()})
 
-Object.values(data).sort((a,b)=>a.t-b.t).forEach(c=>{
-
-let d=document.createElement("div");
-
-d.innerHTML=`<b>${c.u}</b>: ${c.m}`;
-
-area.appendChild(d);
-
-});
-
-});
+closeTransfer()
 
 }
 
 function getCardImg(v){
 
-const suitMap={"♠":"S","♥":"H","♦":"D","♣":"C"};
+const suitMap={"♠":"S","♥":"H","♦":"D","♣":"C"}
 
-let val=v.replace(/[♠♥♦♣]/g,'');
+let val=v.replace(/[♠♥♦♣]/g,'')
 
-if(val==="10")val="0";
+if(val==="10")val="0"
 
-return`https://deckofcardsapi.com/static/img/${val}${suitMap[v.slice(-1)]}.png`;
+return`https://deckofcardsapi.com/static/img/${val}${suitMap[v.slice(-1)]}.png`
 
 }
 
 </script>
 
 </body>
-
 </html>
