@@ -4,58 +4,34 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tos Leng</title>
-
 <style>
-body{ margin:0; font-family:sans-serif; background:#0a2114; color:white; overflow:hidden; }
-#login{ position:fixed; inset:0; background:black; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:100; }
-input{ padding:12px; margin:6px; width:220px; border-radius:8px; border:none; text-align:center; }
-button{ padding:12px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; }
-
-#table{ height:40vh; position:relative; background:radial-gradient(circle,#1a5e37,#0a2114); }
-.player{ position:absolute; transform:translate(-50%,-50%); text-align:center; }
-.cards{ display:flex; gap:4px; margin-top:5px; }
-.cards img{ width:40px; height:55px; border-radius:4px; }
-
-/* CHAT TAKES HALF SCREEN */
-#chatArea {
-    height: 45vh; background: rgba(0,0,0,0.9); margin: 10px;
-    padding: 10px; overflow-y: auto; border: 2px solid #1a5e37;
-    border-radius: 10px; color: #00ff00; font-family: monospace;
-}
-
-.controls{ display:grid; grid-template-columns:repeat(3,1fr); gap:5px; padding:10px; }
-
-/* MODAL */
-#transferBox {
-    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); 
-    z-index:300; align-items:center; justify-content:center;
-}
-.player-option { background:#222; padding:15px; margin:5px; border-radius:8px; cursor:pointer; text-align:center; }
+    body { margin:0; font-family: sans-serif; background:#0a2114; color:white; }
+    #login { position:fixed; inset:0; background:black; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:100; }
+    input { padding:12px; margin:5px; width:80%; border-radius:8px; border:none; text-align:center; }
+    button { padding:12px; margin:5px; width:80%; border:none; border-radius:8px; font-weight:bold; cursor:pointer; }
+    #game { display:none; padding:10px; }
+    #table { height:35vh; border:4px solid #3d2b1f; border-radius:20px; margin-bottom:10px; }
+    #history { height:40vh; background:rgba(0,0,0,0.5); overflow-y:auto; padding:10px; border-radius:10px; font-size:14px; }
 </style>
 </head>
-
 <body>
 
 <div id="login">
     <h2 style="color:gold">TOS LENG</h2>
-    <input id="room" placeholder="Room"><input id="name" placeholder="Name">
-    <button id="startBtn">START</button>
+    <input id="room" placeholder="Room Name">
+    <input id="name" placeholder="Your Name">
+    <input id="startAmount" type="number" value="50000">
+    <button id="startBtn" style="background:gold">JOIN GAME</button>
 </div>
 
-<div id="transferBox">
-    <div style="width:80%;" id="nameList"></div>
-</div>
-
-<div id="game" style="display:none">
+<div id="game">
     <div id="table"></div>
-    <div id="chatArea"></div>
-    <div class="controls">
+    <div id="history"></div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-top:10px;">
         <button id="dealBtn">Deal</button>
-        <button id="readyBtn">Ready</button>
+        <button id="transferBtn" style="background:gold">Transfer</button>
+        <button id="chatBtn" style="background:#007bff; color:white">Chat</button>
         <button id="revealBtn">Reveal</button>
-        <button id="moneyBtn" style="background:gold;">Transfer</button>
-        <button id="resetBtn">Reset</button>
-        <button id="chatBtn" style="background:#007bff; color:white;">Chat</button>
     </div>
 </div>
 
@@ -63,63 +39,74 @@ button{ padding:12px; border:none; border-radius:8px; font-weight:bold; cursor:p
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"
 import {getDatabase,ref,set,onValue,get,update,push} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js"
 
-const db = getDatabase(initializeApp({/* Your Config Here */}));
-let room, player, ready=false;
+const db = getDatabase(initializeApp({
+    databaseURL: "https://the-family-card-game-default-rtdb.asia-southeast1.firebasedatabase.app"
+}));
 
-// ... (Keep existing login logic)
+let room, player;
 
-// FIXED CHAT LISTENER: Ensure it pulls everything from 'history'
+document.getElementById("startBtn").onclick = async () => {
+    room = document.getElementById("room").value.toLowerCase();
+    player = document.getElementById("name").value;
+    let initialMoney = parseInt(document.getElementById("startAmount").value);
+    
+    if(!room || !player) return alert("Enter room and name");
+
+    // Only set money if wallet doesn't exist
+    const walletRef = ref(db, `rooms/${room}/wallets/${player}`);
+    const snap = await get(walletRef);
+    if(!snap.exists()) await set(walletRef, initialMoney);
+
+    document.getElementById("login").style.display = "none";
+    document.getElementById("game").style.display = "block";
+    listen();
+};
+
 function listen() {
     onValue(ref(db, `rooms/${room}`), snap => {
         const data = snap.val() || {};
-        // ... (Render players on table)
-        
-        const chatArea = document.getElementById("chatArea");
-        chatArea.innerHTML = "";
+        // Display Players & Wallets
+        let html = "Players: ";
+        if(data.wallets) {
+            Object.keys(data.wallets).forEach(p => html += `${p}(${data.wallets[p]}) `);
+        }
+        document.getElementById("table").innerHTML = html;
+
+        // Display Chat/History
+        const hist = document.getElementById("history");
+        hist.innerHTML = "";
         if(data.history) {
-            Object.values(data.history).reverse().forEach(m => {
-                const d = document.createElement("div");
-                d.innerText = m;
-                chatArea.appendChild(d);
-            });
+            Object.values(data.history).reverse().forEach(m => hist.innerHTML += `<div>${m}</div>`);
         }
     });
 }
 
-// FIXED TRANSFER: Closes immediately
-document.getElementById("moneyBtn").onclick = async () => {
+document.getElementById("transferBtn").onclick = async () => {
     const snap = await get(ref(db, `rooms/${room}/wallets`));
-    const wallets = snap.val() || {};
-    const others = Object.keys(wallets).filter(n => n !== player);
+    const wallets = snap.val();
+    const names = Object.keys(wallets).filter(n => n !== player);
     
-    const listDiv = document.getElementById("nameList");
-    listDiv.innerHTML = "<h3>Select Player</h3>";
-    others.forEach(target => {
-        const btn = document.createElement("div");
-        btn.className = "player-option";
-        btn.innerText = target;
-        btn.onclick = () => {
-            document.getElementById("transferBox").style.display = "none"; // CLOSE IMMEDIATELY
-            const amt = prompt(`Amount to send to ${target}:`);
-            if(amt) {
-                const updates = {};
-                updates[`rooms/${room}/wallets/${player}`] = wallets[player] - amt;
-                updates[`rooms/${room}/wallets/${target}`] = wallets[target] + amt;
-                update(ref(db), updates);
-                push(ref(db, `rooms/${room}/history`), `💸 ${player} -> ${target}: ${amt}៛`);
-            }
-        };
-        listDiv.appendChild(btn);
-    });
-    document.getElementById("transferBox").style.display = "flex";
-}
+    let msg = "Select target:\n";
+    names.forEach((n, i) => msg += `${i}: ${n}\n`);
+    const idx = prompt(msg);
+    if(idx === null || !names[idx]) return;
 
-// FIXED CHAT: Directly prompts and pushes
+    const target = names[idx];
+    const amt = parseInt(prompt(`Send to ${target}. Amount:`));
+    
+    if(amt > 0 && wallets[player] >= amt) {
+        const updates = {};
+        updates[`rooms/${room}/wallets/${player}`] = wallets[player] - amt;
+        updates[`rooms/${room}/wallets/${target}`] = wallets[target] + amt;
+        await update(ref(db), updates);
+        await push(ref(db, `rooms/${room}/history`), `💸 ${player} sent ${amt} to ${target}`);
+    }
+};
+
 document.getElementById("chatBtn").onclick = () => {
     const msg = prompt("Message:");
     if(msg) push(ref(db, `rooms/${room}/history`), `💬 ${player}: ${msg}`);
-}
-// ... (Rest of your game functions)
+};
 </script>
 </body>
 </html>
