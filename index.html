@@ -4,132 +4,239 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tos Leng</title>
+
 <style>
-    body { margin:0; font-family: sans-serif; background:#0a2114; color:white; overflow:hidden; }
-    #login { position:fixed; inset:0; background:black; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:999; }
-    input { padding:12px; margin:5px; width:80%; border-radius:8px; border:none; text-align:center; }
-    button { padding:12px; margin:5px; width:80%; border:none; border-radius:8px; font-weight:bold; cursor:pointer; }
-    
-    #game { padding:10px; display:none; }
-    #table { height:40vh; border:4px solid #3d2b1f; border-radius:20px; background:#113322; display:flex; align-items:center; justify-content:center; }
-    
-    /* RESTORED ALL 6 BUTTONS */
-    .controls { display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px; margin-top:15px; }
-    
-    #chatModal {
-        display: none; position: fixed; bottom: 0; left: 0; width: 100%; 
-        height: 50vh; background: #000; border-top: 3px solid #1a5e37;
-        flex-direction: column; padding: 10px; z-index: 100;
-    }
-    #chatHistory { flex: 1; overflow-y: auto; font-size: 14px; margin-bottom: 10px; border: 1px solid #333; }
+body{
+margin:0;
+font-family:-apple-system;
+background:#0a2114;
+color:white;
+}
+
+#login{
+position:fixed; inset:0; background:black;
+display:flex; flex-direction:column; align-items:center; justify-content:center;
+z-index:100;
+}
+
+input{ padding:12px; margin:6px; width:220px; border-radius:8px; border:none; text-align:center; }
+button{ padding:12px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; }
+
+#table{
+height:55vh; position:relative; border:8px solid #3d2b1f; border-radius:40px;
+margin:10px; background:radial-gradient(circle,#1a5e37,#0a2114);
+}
+
+.player{ position:absolute; transform:translate(-50%,-50%); text-align:center; padding:10px; }
+.cards{ display:grid; grid-template-columns:repeat(3,40px); grid-template-rows:repeat(2,55px); gap:4px; margin-top:5px; }
+.cards img{ width:40px; height:55px; border-radius:4px; }
+.selected-card { outline: 3px solid gold; transform: scale(1.1); }
+
+.controls{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; padding:10px; }
+.topbar{ display:flex; justify-content:space-between; padding:8px; background:black; }
+
+#history {
+    height: 80px; background: rgba(0,0,0,0.6); margin: 0 10px;
+    padding: 10px; font-size: 13px; overflow-y: auto; border-radius: 8px; 
+    border: 1px solid #1a5e37; color: #00ff00;
+}
 </style>
 </head>
+
 <body>
 
 <div id="login">
-    <h2 style="color:gold">TOS LENG</h2>
-    <input id="room" placeholder="Room Name">
-    <input id="name" placeholder="Your Name">
-    <input id="amount" type="number" value="50000">
-    <button id="startBtn" style="background:gold">START</button>
+<h2 style="color:gold">TOS LENG</h2>
+<input id="room" placeholder="Room">
+<input id="name" placeholder="Name">
+<input id="money" type="number" value="50000">
+<button id="startBtn">START</button>
 </div>
 
-<div id="game">
-    <div id="table">Game Table</div>
-    <div class="controls">
-        <button id="dealBtn">Deal</button>
-        <button id="readyBtn">Ready</button>
-        <button id="revealBtn">Reveal</button>
-        <button id="transferBtn" style="background:gold">Transfer</button>
-        <button id="resetBtn">Reset</button>
-        <button id="chatBtn" style="background:#007bff; color:white">Chat</button>
-    </div>
+<div id="game" style="display:none">
+<div class="topbar">
+<span id="info"></span>
+<button id="logoutBtn">Logout</button>
 </div>
 
-<div id="chatModal">
-    <div style="display:flex; justify-content:space-between;">
-        <h3>Chat & History</h3>
-        <button id="closeChatBtn" style="width:40px; background:#ff4444">X</button>
-    </div>
-    <div id="chatHistory"></div>
-    <div style="display:flex; gap:5px;">
-        <input id="msgInput" placeholder="Message..." style="flex:1">
-        <button id="sendBtn" style="width:60px">Send</button>
-    </div>
+<div id="table"></div>
+<div id="history"></div>
+
+<div class="controls">
+<button id="dealBtn">Deal</button>
+<button id="readyBtn">Ready</button>
+<button id="revealBtn">Reveal</button>
+<button id="moneyBtn" style="background:gold; color:black">Transfer</button>
+<button id="resetBtn">Reset</button>
+<button id="chatBtn">Chat</button>
+</div>
 </div>
 
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"
-import {getDatabase,ref,set,onValue,get,update,push} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js"
+import {getDatabase,ref,set,onValue,get,update,remove,push} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js"
 
-const db = getDatabase(initializeApp({
-    databaseURL: "https://the-family-card-game-default-rtdb.asia-southeast1.firebasedatabase.app"
-}));
-
-let room, player;
-
-document.getElementById("startBtn").onclick = async () => {
-    room = document.getElementById("room").value.toLowerCase();
-    player = document.getElementById("name").value;
-    let initialMoney = parseInt(document.getElementById("amount").value);
-    
-    if(!room || !player) return alert("Enter Room and Name");
-    
-    const walletRef = ref(db, `rooms/${room}/wallets/${player}`);
-    const snap = await get(walletRef);
-    if(!snap.exists()) await set(walletRef, initialMoney);
-
-    document.getElementById("login").style.display = "none";
-    document.getElementById("game").style.display = "block";
-    listen();
-};
-
-function listen() {
-    onValue(ref(db, `rooms/${room}`), snap => {
-        const data = snap.val() || {};
-        const hist = document.getElementById("chatHistory");
-        hist.innerHTML = "";
-        if(data.history) {
-            Object.values(data.history).reverse().forEach(m => hist.innerHTML += `<div>${m}</div>`);
-        }
-    });
+const firebaseConfig={
+apiKey:"AIzaSyBjsVUxlNjGUnYioHOlKmk1wEMoVTSVxLw",
+authDomain:"the-family-card-game.firebaseapp.com",
+databaseURL:"https://the-family-card-game-default-rtdb.asia-southeast1.firebasedatabase.app",
+projectId:"the-family-card-game"
 }
 
-// Button Listeners
-document.getElementById("openChatBtn").onclick = () => document.getElementById("chatModal").style.display = "flex";
-document.getElementById("closeChatBtn").onclick = () => document.getElementById("chatModal").style.display = "none";
-document.getElementById("chatBtn").onclick = () => document.getElementById("chatModal").style.display = "flex";
+const app=initializeApp(firebaseConfig)
+const db=getDatabase(app)
 
-document.getElementById("sendBtn").onclick = () => {
-    const msg = document.getElementById("msgInput").value;
-    if(msg) {
-        push(ref(db, `rooms/${room}/history`), `💬 ${player}: ${msg}`);
-        document.getElementById("msgInput").value = "";
-    }
-};
+let room, player, selectedCard=null, ready=false
 
-document.getElementById("dealBtn").onclick = () => push(ref(db, `rooms/${room}/history`), `🔔 ${player} dealt cards.`);
-document.getElementById("readyBtn").onclick = () => push(ref(db, `rooms/${room}/history`), `✔️ ${player} is ready.`);
-document.getElementById("revealBtn").onclick = () => push(ref(db, `rooms/${room}/history`), `📢 ${player} revealed cards.`);
-document.getElementById("resetBtn").onclick = () => set(ref(db, `rooms/${room}/history`), null);
+document.getElementById("startBtn").onclick = async () => {
+    room = document.getElementById("room").value.trim().toLowerCase()
+    player = document.getElementById("name").value.trim()
+    let money = parseInt(document.getElementById("money").value) || 50000
+    if(!room || !player) return alert("Enter name and room")
 
-document.getElementById("transferBtn").onclick = async () => {
-    const snap = await get(ref(db, `rooms/${room}/wallets`));
-    const wallets = snap.val();
-    const names = Object.keys(wallets).filter(n => n !== player);
-    let msg = "Select target (number):\n" + names.map((n, i) => `${i}: ${n}`).join("\n");
-    const idx = prompt(msg);
-    if(idx !== null && names[idx]) {
-        const amt = parseInt(prompt(`Amount to send to ${names[idx]}:`));
-        if(amt > 0 && wallets[player] >= amt) {
-            const updates = {};
-            updates[`rooms/${room}/wallets/${player}`] = wallets[player] - amt;
-            updates[`rooms/${room}/wallets/${names[idx]}`] = wallets[names[idx]] + amt;
-            update(ref(db), updates);
-            push(ref(db, `rooms/${room}/history`), `💸 ${player} sent ${amt} to ${names[idx]}`);
+    const walletRef = ref(db, `rooms/${room}/wallets/${player}`)
+    const snap = await get(walletRef)
+    if(!snap.exists()) await set(walletRef, money)
+
+    document.getElementById("login").style.display = "none"
+    document.getElementById("game").style.display = "block"
+    document.getElementById("info").innerText = `Room: ${room} | Player: ${player}`
+    listen()
+}
+
+function listen(){
+    onValue(ref(db, `rooms/${room}`), snap => {
+        const data = snap.val() || {}
+        const wallets = data.wallets || {}
+        const players = Object.keys(wallets)
+        const table = document.getElementById("table")
+        table.innerHTML = ""
+
+        players.forEach((p, i) => {
+            const angle = i * (360/players.length) * Math.PI/180
+            const spot = document.createElement("div")
+            spot.className = "player"
+            spot.style.left = (50+35*Math.cos(angle))+"%"
+            spot.style.top = (50+35*Math.sin(angle))+"%"
+
+            const isReady = data.readyStatus?.[p]
+            const badge = document.createElement("div")
+            // Green tick fix
+            badge.innerHTML = `<b>${p}</b>${isReady ? ' <span style="color:#00ff00;">✓</span>' : ""}<br>${wallets[p]}៛`
+            spot.appendChild(badge)
+
+            const cardDiv = document.createElement("div")
+            cardDiv.className = "cards"
+
+            if(data.players?.[p]){
+                data.players[p].forEach((c, idx) => {
+                    const img = document.createElement("img")
+                    img.src = (c.faceUp || p === player) ? cardImg(c.val) : "https://deckofcardsapi.com/static/img/back.png"
+                    
+                    if(p === player && !isReady){
+                        if(selectedCard === idx) img.className = "selected-card"
+                        img.onclick = () => {
+                            if(selectedCard === null) {
+                                selectedCard = idx;
+                                listen();
+                            } else {
+                                swap(selectedCard, idx);
+                                selectedCard = null;
+                            }
+                        }
+                    }
+                    cardDiv.appendChild(img)
+                })
+            }
+            spot.appendChild(cardDiv)
+            table.appendChild(spot)
+        })
+
+        // History/Chat Display
+        const histBox = document.getElementById("history")
+        histBox.innerHTML = ""
+        if(data.history){
+            Object.values(data.history).reverse().forEach(msg => {
+                const item = document.createElement("div")
+                item.innerText = "• " + msg
+                histBox.appendChild(item)
+            })
         }
-    }
-};
+    })
+}
+
+async function swap(a, b){
+    const pRef = ref(db, `rooms/${room}/players/${player}`)
+    const snap = await get(pRef)
+    let cards = snap.val()
+    if(!cards) return;
+    [cards[a], cards[b]] = [cards[b], cards[a]]
+    await set(pRef, cards)
+}
+
+// NEW TRANSFER LOGIC: Shows name list option
+document.getElementById("moneyBtn").onclick = async () => {
+    const snap = await get(ref(db, `rooms/${room}/wallets`))
+    const wallets = snap.val() || {}
+    const others = Object.keys(wallets).filter(n => n !== player)
+
+    if(others.length === 0) return alert("No other players in room!")
+
+    const choice = prompt("Send money to:\n" + others.join("\n"))
+    if(!choice || !others.includes(choice)) return alert("Invalid player name selected.")
+
+    const amt = parseInt(prompt(`Amount to send to ${choice}:`))
+    if(!amt || amt <= 0) return
+
+    if(wallets[player] < amt) return alert("Not enough money!")
+
+    const updates = {}
+    updates[`rooms/${room}/wallets/${player}`] = wallets[player] - amt
+    updates[`rooms/${room}/wallets/${choice}`] = wallets[choice] + amt
+    
+    await update(ref(db), updates)
+    await push(ref(db, `rooms/${room}/history`), `${player} sent ${amt}៛ to ${choice}`)
+}
+
+document.getElementById("dealBtn").onclick = () => {
+    const suits = ["♠","♥","♦","♣"], vals = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"]
+    let deck = []
+    suits.forEach(s => vals.forEach(v => deck.push(v+s)))
+    deck.sort(() => Math.random() - 0.5)
+    let cards = deck.slice(0, 6).map(v => ({val:v, faceUp:false}))
+    set(ref(db, `rooms/${room}/players/${player}`), cards)
+    set(ref(db, `rooms/${room}/readyStatus/${player}`), false)
+}
+
+document.getElementById("readyBtn").onclick = () => {
+    ready = !ready
+    set(ref(db, `rooms/${room}/readyStatus/${player}`), ready)
+    document.getElementById("readyBtn").innerText = ready ? "Unready" : "Ready"
+}
+
+document.getElementById("revealBtn").onclick = () => {
+    get(ref(db, `rooms/${room}/players`)).then(snap => {
+        const d = snap.val(); let up = {}
+        if(!d) return;
+        for(let p in d) d[p].forEach((c, i) => { up[`rooms/${room}/players/${p}/${i}/faceUp`] = true })
+        update(ref(db), up)
+    })
+}
+
+document.getElementById("resetBtn").onclick = () => {
+    set(ref(db, `rooms/${room}/players`), null)
+    set(ref(db, `rooms/${room}/readyStatus`), null)
+    set(ref(db, `rooms/${room}/history`), null)
+}
+
+document.getElementById("logoutBtn").onclick = () => location.reload()
+
+function cardImg(v){
+    const suitMap = {"♠":"S","♥":"H","♦":"D","♣":"C"}
+    let val = v.replace(/[♠♥♦♣]/g,'')
+    if(val === "10") val = "0"
+    return `https://deckofcardsapi.com/static/img/${val}${suitMap[v.slice(-1)]}.png`
+}
 </script>
 </body>
 </html>
