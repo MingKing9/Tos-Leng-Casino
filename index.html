@@ -83,6 +83,22 @@ padding:8px;
 background:black;
 }
 
+#transferBox{
+display:none;
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.8);
+align-items:center;
+justify-content:center;
+}
+
+.transferUI{
+background:white;
+color:black;
+padding:20px;
+border-radius:10px;
+}
+
 </style>
 </head>
 
@@ -99,7 +115,6 @@ background:black;
 <button id="startBtn">START</button>
 
 </div>
-
 
 <div id="game" style="display:none">
 
@@ -124,10 +139,34 @@ background:black;
 
 </div>
 
+
+<div id="transferBox">
+
+<div class="transferUI">
+
+<h3>Transfer Money</h3>
+
+<select id="transferPlayer"></select>
+
+<br><br>
+
+<input id="transferAmount" type="number" placeholder="Amount">
+
+<br><br>
+
+<button id="sendMoney">Send</button>
+
+<button onclick="document.getElementById('transferBox').style.display='none'">Cancel</button>
+
+</div>
+
+</div>
+
+
 <script type="module">
 
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"
-import {getDatabase,ref,set,onValue,get,update,remove,runTransaction} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js"
+import {getDatabase,ref,set,onValue,get,update,remove,runTransaction,push} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js"
 
 const firebaseConfig={
 apiKey:"AIzaSyBjsVUxlNjGUnYioHOlKmk1wEMoVTSVxLw",
@@ -235,8 +274,7 @@ table.appendChild(spot)
 })
 
 }
-
-async function swap(a,b){
+  async function swap(a,b){
 
 const pRef=ref(db,`rooms/${room}/players/${player}`)
 const snap=await get(pRef)
@@ -331,6 +369,62 @@ let val=v.replace(/[♠♥♦♣]/g,'')
 if(val==="10") val="0"
 
 return `https://deckofcardsapi.com/static/img/${val}${suitMap[v.slice(-1)]}.png`
+
+}
+
+
+/* MONEY TRANSFER */
+
+document.getElementById("moneyBtn").onclick=async()=>{
+
+document.getElementById("transferBox").style.display="flex"
+
+const list=document.getElementById("transferPlayer")
+
+list.innerHTML=""
+
+const snap=await get(ref(db,`rooms/${room}/wallets`))
+const players=snap.val()||{}
+
+Object.keys(players).forEach(p=>{
+
+if(p!==player){
+
+const op=document.createElement("option")
+
+op.value=p
+op.text=p
+
+list.appendChild(op)
+
+}
+
+})
+
+}
+
+
+document.getElementById("sendMoney").onclick=async()=>{
+
+const to=document.getElementById("transferPlayer").value
+const amt=parseInt(document.getElementById("transferAmount").value)
+
+if(!to||!amt||amt<=0) return alert("Invalid amount")
+
+const fromRef=ref(db,`rooms/${room}/wallets/${player}`)
+const toRef=ref(db,`rooms/${room}/wallets/${to}`)
+
+await runTransaction(fromRef,val=>val>=amt?val-amt:null)
+await runTransaction(toRef,val=>val?val+amt:amt)
+
+
+push(ref(db,`rooms/${room}/chats`),{
+u:"SYSTEM",
+m:`${player} transferred ${amt}៛ to ${to}`,
+t:Date.now()
+})
+
+document.getElementById("transferBox").style.display="none"
 
 }
 
