@@ -100,22 +100,6 @@
         }
     };
 
-  window.leaveGame = async () => {
-    if (confirm("Are you sure you want to leave the table?")) {
-        try {
-            // 1. Delete the data and WAIT for the server to confirm
-            await set(ref(db, `rooms/${room}/players/${player}`), null);
-            await set(ref(db, `rooms/${room}/readyStatus/${player}`), null);
-            
-            // 2. ONLY after the server confirms, refresh the page
-            location.reload();
-        } catch (error) {
-            console.error("Error leaving game: ", error);
-            alert("Something went wrong. Please check the console.");
-        }
-    }
-};
-
     function applyTranslations() {
         const d = dictionary[lang];
         // Main UI
@@ -144,10 +128,6 @@
 <div id="room-info-bar">
     <span id="display-room">តុ: -</span>
     <span id="display-name">អ្នកលេង: -</span>
-    
-    <button onclick="leaveGame()" style="background:red; color:white; border:none; padding:5px; cursor:pointer; border-radius:4px; margin-left:10px;">
-        LEAVE
-    </button>
 </div>
 
 <div id="game-wrapper">
@@ -182,8 +162,9 @@
 </div>
 
 <script type="module">
-   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getDatabase, ref, set, update, onValue, get, push, runTransaction, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, set, update, onValue, get, push, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
     const firebaseConfig = {
         apiKey: "AIzaSyBjsVUxlNjGUnYioHOlKmk1wEMoVTSVxLw",
         authDomain: "the-family-card-game.firebaseapp.com",
@@ -203,34 +184,21 @@ import { getDatabase, ref, set, update, onValue, get, push, runTransaction, onDi
         cn: { start: "开始", table: "桌号", player: "玩家", money: "钱包", chat: "聊天", deal: "发牌", ready: "准备", unready: "未准备", reveal: "开牌", reset: "重置", trans: "转账", send: "发送", cancel: "取消", chatT: "聊天" }
     };
 
-window.join = function() {
-    room = document.getElementById("roomInput").value.trim().toLowerCase();
-    player = document.getElementById("nameInput").value.trim();
-    lang = document.getElementById("langSelect").value;
-    const money = parseInt(document.getElementById("moneyInput").value) || 50000;
-    
-    if(!room || !player) return alert("Please input name/room");
+    window.join = function() {
+        room = document.getElementById("roomInput").value.trim().toLowerCase();
+        player = document.getElementById("nameInput").value.trim();
+        lang = document.getElementById("langSelect").value;
+        const money = parseInt(document.getElementById("moneyInput").value) || 50000;
+        
+        if(!room || !player) return alert("Please input name/room");
 
-    // 1. Set the initial money (only if it doesn't exist, to avoid resetting)
-    const walletRef = ref(db, `rooms/${room}/wallets/${player}`);
-    get(walletRef).then((snapshot) => {
-        if (!snapshot.exists()) {
-            set(walletRef, money);
-        }
-    });
-
-    // 2. THIS IS THE FIX: Automatically remove player presence on disconnect
-    // This removes their 'ready' status and 'cards' when they close the tab,
-    // but LEAVES their money in the wallet alone.
-    onDisconnect(ref(db, `rooms/${room}/players/${player}`)).remove();
-    onDisconnect(ref(db, `rooms/${room}/readyStatus/${player}`)).remove();
-
-    document.getElementById("login-screen").style.display = "none";
-    
-    applyTranslations();
-    listen();
-    listenChat();
-};
+        set(ref(db, `rooms/${room}/wallets/${player}`), money);
+        document.getElementById("login-screen").style.display = "none";
+        
+        applyTranslations();
+        listen();
+        listenChat();
+    };
 
     function applyTranslations() {
         const d = dictionary[lang];
@@ -249,7 +217,7 @@ window.join = function() {
         document.getElementById("txt-chat-title").innerText = d.chatT;
     }
 
-function listen() {
+    function listen() {
         onValue(ref(db, `rooms/${room}`), snap => {
             const data = snap.val() || {};
             const table = document.getElementById("poker-table");
@@ -260,7 +228,6 @@ function listen() {
             const myCards = (data.players && data.players[player]) ? data.players[player] : null;
             const amIReady = (data.readyStatus && data.readyStatus[player]);
 
-            // Re-enabling buttons
             document.getElementById("dealBtn").style.display = myCards ? "none" : "block";
             document.getElementById("readyBtn").style.display = (myCards && !amIReady) ? "block" : "none";
             document.getElementById("notReadyBtn").style.display = amIReady ? "block" : "none";
@@ -382,18 +349,13 @@ window.confirmTransfer = () => {
         return `https://deckofcardsapi.com/static/img/${val}${suitMap[v.slice(-1)]}.png`;
     };
 
-   window.deal = () => {
-    // 1. Generate the cards
-    const s = ["♠", "♥", "♦", "♣"], v = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-    let d = []; 
-    s.forEach(si => v.forEach(vi => d.push(vi + si)));
-    let cards = d.sort(() => Math.random() - 0.5).slice(0, 6).map(val => ({val, faceUp: false}));
-    
-    // 2. Write to Firebase
-    // Ensure the path includes your 'room' variable
-    set(ref(db, `rooms/${room}/players/${player}`), cards);
-    set(ref(db, `rooms/${room}/readyStatus/${player}`), false);
-};
+    window.deal = () => {
+        const s=["♠","♥","♦","♣"], v=["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+        let d=[]; s.forEach(si=>v.forEach(vi=>d.push(vi+si)));
+        let cards=d.sort(()=>Math.random()-0.5).slice(0,6).map(val=>({val, faceUp:false}));
+        set(ref(db, `rooms/${room}/players/${player}`), cards);
+        set(ref(db, `rooms/${room}/readyStatus/${player}`), false);
+    };
 
     window.reveal = () => {
         get(ref(db, `rooms/${room}/players`)).then(snap => {
