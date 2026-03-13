@@ -2,21 +2,16 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Tos Leng</title>
 
 <style>
-:root{
---gold:#d4af37;
---felt:#1a5e37;
---wood:#3d2b1f;
---red:#e74c3c;
-}
+:root { --gold:#d4af37; --felt:#1a5e37; --wood:#3d2b1f; --red:#e74c3c; --safe-bottom:env(safe-area-inset-bottom); }
 
 *{
 box-sizing:border-box;
-font-family:-apple-system,sans-serif;
 -webkit-tap-highlight-color:transparent;
+font-family:-apple-system,sans-serif;
 }
 
 body,html{
@@ -33,28 +28,32 @@ position:fixed;
 top:0;
 width:100%;
 height:44px;
-background:#000;
+padding-top:env(safe-area-inset-top);
+background:rgba(0,0,0,0.9);
 display:flex;
 justify-content:space-between;
 align-items:center;
 padding:0 15px;
-border-bottom:1px solid #333;
-color:var(--gold);
+border-bottom:1px solid #444;
 z-index:1000;
+color:var(--gold);
+font-size:13px;
 }
 
 #btn-leave{
 color:var(--red);
+font-weight:bold;
 cursor:pointer;
 border:1px solid var(--red);
-padding:3px 10px;
+padding:2px 8px;
 border-radius:5px;
 }
 
 #game-wrapper{
 display:flex;
 flex-direction:column;
-height:100vh;
+height:100dvh;
+width:100vw;
 background:radial-gradient(circle,var(--felt) 0%,#0a2114 100%);
 }
 
@@ -63,26 +62,26 @@ flex:1;
 position:relative;
 margin:60px 10px 10px 10px;
 border:8px solid var(--wood);
-border-radius:40px;
+border-radius:50px;
+box-shadow:inset 0 0 60px rgba(0,0,0,0.8);
 }
 
 .player-spot{
 position:absolute;
 transform:translate(-50%,-50%);
-width:110px;
 display:flex;
 flex-direction:column;
 align-items:center;
+width:110px;
 }
 
 .player-badge{
-background:#000;
-color:#fff;
-font-size:11px;
-padding:4px;
-border-radius:6px;
+background:rgba(0,0,0,0.85);
+padding:5px;
+border-radius:10px;
 border:1px solid var(--gold);
-margin-bottom:4px;
+font-size:10px;
+color:#fff;
 text-align:center;
 width:100%;
 }
@@ -92,13 +91,14 @@ display:grid;
 grid-template-columns:repeat(3,35px);
 grid-template-rows:repeat(2,50px);
 gap:4px;
+margin-top:5px;
 }
 
 .card-img{
 width:35px;
 height:50px;
-background:#fff;
 border-radius:4px;
+background:white;
 }
 
 .controls-bar{
@@ -107,20 +107,20 @@ border-top:1px solid #333;
 display:grid;
 grid-template-columns:repeat(5,1fr);
 gap:6px;
-padding:10px;
+padding:10px 10px calc(var(--safe-bottom)+10px);
 }
 
 button{
-padding:14px 0;
+padding:15px 0;
 border:none;
-border-radius:8px;
-font-size:10px;
+border-radius:10px;
 font-weight:bold;
+font-size:9px;
 color:white;
 cursor:pointer;
 }
 
-.btn-gold{background:var(--gold);color:black;}
+.btn-gold{background:var(--gold);color:#000;}
 .btn-blue{background:#2980b9;}
 .btn-green{background:#27ae60;}
 .btn-red{background:#c0392b;}
@@ -128,12 +128,12 @@ cursor:pointer;
 #login-screen{
 position:fixed;
 inset:0;
-background:black;
+background:#000;
+z-index:9999;
 display:flex;
 flex-direction:column;
 align-items:center;
 justify-content:center;
-z-index:9999;
 }
 
 .login-input{
@@ -159,9 +159,7 @@ text-align:center;
 <input id="nameInput" class="login-input" placeholder="Your Name">
 <input id="moneyInput" class="login-input" type="number" value="50000">
 
-<button onclick="join()" class="btn-gold" style="width:85%;max-width:300px;font-size:16px;">
-START
-</button>
+<button onclick="join()" class="btn-gold" style="width:85%;max-width:300px;font-size:16px;">START</button>
 </div>
 
 <div id="room-info-bar">
@@ -175,10 +173,10 @@ START
 
 <div class="controls-bar">
 
-<button class="btn-gold" onclick="resetMoney()">RESET $</button>
-<button class="btn-blue" onclick="deal()">DEAL</button>
-<button class="btn-green" onclick="toggleReady(true)">READY</button>
-<button class="btn-blue" onclick="reveal()">REVEAL</button>
+<button class="btn-gold" onclick="openTransfer()">MONEY</button>
+<button class="btn-gold">CHAT</button>
+<button id="dealBtn" class="btn-blue" onclick="deal()">DEAL</button>
+<button class="btn-gold" style="background:#d35400" onclick="reveal()">REVEAL</button>
 <button class="btn-red" onclick="resetGame()">RESET</button>
 
 </div>
@@ -187,23 +185,15 @@ START
 
 <script type="module">
 
-import {initializeApp} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import {
-getDatabase,
-ref,
-set,
-get,
-onValue,
-remove,
-update
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getDatabase, ref, set, get, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
 const app = initializeApp({
 apiKey:"AIzaSyBjsVUxlNjGUnYioHOlKmk1wEMoVTSVxLw",
 databaseURL:"https://the-family-card-game-default-rtdb.asia-southeast1.firebasedatabase.app"
 });
 
-const db=getDatabase(app);
+const db = getDatabase(app);
 
 let room;
 let player;
@@ -213,16 +203,16 @@ const map={'♠':'S','♥':'H','♦':'D','♣':'C'};
 return v.replace(/[♠♥♦♣]/g,'').replace('10','0')+map[v.slice(-1)];
 }
 
-window.join=async()=>{
+window.join = async () => {
 
 room=document.getElementById("roomInput").value.trim().toLowerCase();
 player=document.getElementById("nameInput").value.trim();
 const startMoney=parseInt(document.getElementById("moneyInput").value)||50000;
 
-if(!room||!player)return alert("Enter name and room");
+if(!room || !player) return alert("Enter Name & Room");
 
-const moneyRef=ref(db,`rooms/${room}/money/${player}`);
-const snap=await get(moneyRef);
+const moneyRef = ref(db,`rooms/${room}/money/${player}`);
+const snap = await get(moneyRef);
 
 if(!snap.exists()){
 await set(moneyRef,startMoney);
@@ -231,13 +221,12 @@ await set(moneyRef,startMoney);
 await set(ref(db,`rooms/${room}/players/${player}`),[]);
 
 document.getElementById("display-room").innerText="TABLE: "+room;
-
 document.getElementById("login-screen").style.display="none";
 
 listen();
 };
 
-window.logout=async()=>{
+window.logout = async () => {
 await remove(ref(db,`rooms/${room}/players/${player}`));
 location.reload();
 };
@@ -258,7 +247,7 @@ Object.keys(players).forEach((p,i)=>{
 const spot=document.createElement("div");
 spot.className="player-spot";
 
-spot.style.left=(20+i*20)+"%";
+spot.style.left=(20+(i*20))+"%";
 spot.style.top="50%";
 
 const badge=document.createElement("div");
@@ -270,13 +259,13 @@ spot.appendChild(badge);
 const cardsDiv=document.createElement("div");
 cardsDiv.className="card-row";
 
-(players[p]||[]).forEach(c=>{
+(players[p]||[]).forEach(card=>{
 
 const img=document.createElement("img");
 img.className="card-img";
 
-if(c){
-img.src=`https://deckofcardsapi.com/static/img/${cardCode(c.val)}.png`;
+if(card.faceUp){
+img.src=`https://deckofcardsapi.com/static/img/${cardCode(card.val)}.png`;
 }else{
 img.src="https://deckofcardsapi.com/static/img/back.png";
 }
@@ -293,18 +282,13 @@ table.appendChild(spot);
 });
 }
 
-window.deal=async()=>{
+window.deal = async () => {
 
 const suits=["♠","♥","♦","♣"];
 const vals=["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
 
 let deck=[];
-
-suits.forEach(s=>{
-vals.forEach(v=>{
-deck.push(v+s);
-});
-});
+suits.forEach(s=>vals.forEach(v=>deck.push(v+s)));
 
 deck.sort(()=>Math.random()-0.5);
 
@@ -325,10 +309,9 @@ updates[`rooms/${room}/players/${child.key}`]=cards;
 });
 
 await update(ref(db),updates);
-
 };
 
-window.reveal=async()=>{
+window.reveal = async () => {
 
 const snap=await get(ref(db,`rooms/${room}/players`));
 
@@ -338,19 +321,16 @@ snap.forEach(child=>{
 
 let cards=child.val();
 
-cards=cards.map(c=>{
-return {val:c.val,faceUp:true};
-});
+cards=cards.map(c=>({val:c.val,faceUp:true}));
 
 updates[`rooms/${room}/players/${child.key}`]=cards;
 
 });
 
 await update(ref(db),updates);
-
 };
 
-window.resetGame=async()=>{
+window.resetGame = async () => {
 
 const snap=await get(ref(db,`rooms/${room}/players`));
 
@@ -361,23 +341,10 @@ updates[`rooms/${room}/players/${child.key}`]=[];
 });
 
 await update(ref(db),updates);
-
 };
 
-window.resetMoney=async()=>{
-
-const newMoney=prompt("Enter new money amount");
-if(!newMoney)return;
-
-await set(
-ref(db,`rooms/${room}/money/${player}`),
-parseInt(newMoney)
-);
-
-};
-
-window.toggleReady=(s)=>{
-set(ref(db,`rooms/${room}/readyStatus/${player}`),s);
+window.openTransfer = ()=>{
+alert("Money transfer system placeholder");
 };
 
 </script>
