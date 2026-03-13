@@ -83,6 +83,33 @@ padding:8px;
 background:black;
 }
 
+#chatWindow{
+position:fixed;
+bottom:0;
+left:0;
+right:0;
+height:40vh;
+background:black;
+display:none;
+flex-direction:column;
+}
+
+#chatMessages{
+flex:1;
+overflow:auto;
+padding:10px;
+font-size:14px;
+}
+
+#chatInput{
+display:flex;
+}
+
+#chatInput input{
+flex:1;
+margin:0;
+}
+
 #transferBox{
 display:none;
 position:fixed;
@@ -116,6 +143,7 @@ border-radius:10px;
 
 </div>
 
+
 <div id="game" style="display:none">
 
 <div class="topbar">
@@ -135,6 +163,18 @@ border-radius:10px;
 <button id="resetBtn">Reset</button>
 <button id="chatBtn">Chat</button>
 
+</div>
+
+</div>
+
+
+<div id="chatWindow">
+
+<div id="chatMessages"></div>
+
+<div id="chatInput">
+<input id="chatText">
+<button id="sendChat">Send</button>
 </div>
 
 </div>
@@ -208,8 +248,7 @@ document.getElementById("info").innerText=`Room: ${room} | Player: ${player}`
 listen()
 
 }
-
-function listen(){
+  function listen(){
 
 onValue(ref(db,`rooms/${room}`),snap=>{
 
@@ -274,7 +313,8 @@ table.appendChild(spot)
 })
 
 }
-  async function swap(a,b){
+
+async function swap(a,b){
 
 const pRef=ref(db,`rooms/${room}/players/${player}`)
 const snap=await get(pRef)
@@ -373,6 +413,54 @@ return `https://deckofcardsapi.com/static/img/${val}${suitMap[v.slice(-1)]}.png`
 }
 
 
+
+/* CHAT */
+
+document.getElementById("chatBtn").onclick=()=>{
+
+const w=document.getElementById("chatWindow")
+
+w.style.display=w.style.display==="flex"?"none":"flex"
+
+}
+
+document.getElementById("sendChat").onclick=()=>{
+
+const txt=document.getElementById("chatText").value
+
+if(!txt) return
+
+push(ref(db,`rooms/${room}/chats`),{
+
+u:player,
+m:txt,
+t:Date.now()
+
+})
+
+document.getElementById("chatText").value=""
+
+}
+
+onValue(ref(db,`rooms/${room}/chats`),snap=>{
+
+const box=document.getElementById("chatMessages")
+
+box.innerHTML=""
+
+snap.forEach(s=>{
+
+const c=s.val()
+
+box.innerHTML+=`<div>${c.u}: ${c.m}</div>`
+
+})
+
+box.scrollTop=box.scrollHeight
+
+})
+
+
 /* MONEY TRANSFER */
 
 document.getElementById("moneyBtn").onclick=async()=>{
@@ -391,7 +479,6 @@ Object.keys(players).forEach(p=>{
 if(p!==player){
 
 const op=document.createElement("option")
-
 op.value=p
 op.text=p
 
@@ -402,7 +489,6 @@ list.appendChild(op)
 })
 
 }
-
 
 document.getElementById("sendMoney").onclick=async()=>{
 
@@ -416,7 +502,6 @@ const toRef=ref(db,`rooms/${room}/wallets/${to}`)
 
 await runTransaction(fromRef,val=>val>=amt?val-amt:null)
 await runTransaction(toRef,val=>val?val+amt:amt)
-
 
 push(ref(db,`rooms/${room}/chats`),{
 u:"SYSTEM",
