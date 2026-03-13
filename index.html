@@ -27,17 +27,27 @@ height:50vh; position:relative; border:8px solid #3d2b1f; border-radius:40px;
 margin:10px; background:radial-gradient(circle,#1a5e37,#0a2114);
 }
 
-.player{ position:absolute; transform:translate(-50%,-50%); text-align:center; padding:10px; }
+.player{ 
+    position:absolute; transform:translate(-50%,-50%); 
+    text-align:center; padding:10px; border-radius:15px;
+    transition: background 0.3s;
+}
+
+/* Yellow highlight for selection */
+.selected-target { 
+    background: rgba(255, 215, 0, 0.3); 
+    outline: 2px solid gold;
+}
+
 .cards{ display:grid; grid-template-columns:repeat(3,40px); grid-template-rows:repeat(2,55px); gap:4px; margin-top:5px; }
 .cards img{ width:40px; height:55px; border-radius:4px; }
-.selected-card { outline: 3px solid gold; transform: scale(1.1); }
+.selected-card { outline: 3px solid #00ff00; transform: scale(1.1); }
 
 .controls{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; padding:10px; }
 .topbar{ display:flex; justify-content:space-between; padding:8px; background:black; }
 
-/* Fixed Chat Box */
-#history {
-    height: 100px; background: rgba(0,0,0,0.7); margin: 0 10px;
+#chatHistory {
+    height: 100px; background: rgba(0,0,0,0.8); margin: 0 10px;
     padding: 10px; font-size: 13px; overflow-y: auto; border-radius: 8px; 
     border: 1px solid #1a5e37; color: #00ff00;
 }
@@ -61,7 +71,7 @@ margin:10px; background:radial-gradient(circle,#1a5e37,#0a2114);
 </div>
 
 <div id="table"></div>
-<div id="history"></div>
+<div id="chatHistory"></div>
 
 <div class="controls">
 <button id="dealBtn">Deal</button>
@@ -69,7 +79,7 @@ margin:10px; background:radial-gradient(circle,#1a5e37,#0a2114);
 <button id="revealBtn">Reveal</button>
 <button id="moneyBtn" style="background:gold; color:black">Transfer</button>
 <button id="resetBtn">Reset</button>
-<button id="chatBtn" style="background:#2b5a3e; color:white">Chat</button>
+<button id="chatBtn">Chat</button>
 </div>
 </div>
 
@@ -87,7 +97,7 @@ projectId:"the-family-card-game"
 const app=initializeApp(firebaseConfig)
 const db=getDatabase(app)
 
-let room, player, selectedCard=null, ready=false
+let room, player, selectedCard=null, selectedTarget=null, ready=false
 
 document.getElementById("startBtn").onclick = async () => {
     room = document.getElementById("room").value.trim().toLowerCase()
@@ -116,9 +126,17 @@ function listen(){
         players.forEach((p, i) => {
             const angle = i * (360/players.length) * Math.PI/180
             const spot = document.createElement("div")
-            spot.className = "player"
+            spot.className = "player" + (selectedTarget === p ? " selected-target" : "")
             spot.style.left = (50+35*Math.cos(angle))+"%"
             spot.style.top = (50+35*Math.sin(angle))+"%"
+
+            // Clicking player name sets target for money transfer
+            spot.onclick = () => {
+                if(p !== player) {
+                    selectedTarget = (selectedTarget === p) ? null : p;
+                    listen(); 
+                }
+            }
 
             const isReady = data.readyStatus?.[p]
             const badge = document.createElement("div")
@@ -135,14 +153,10 @@ function listen(){
                     
                     if(p === player && !isReady){
                         if(selectedCard === idx) img.className = "selected-card"
-                        img.onclick = () => {
-                            if(selectedCard === null) {
-                                selectedCard = idx;
-                                listen();
-                            } else {
-                                swap(selectedCard, idx);
-                                selectedCard = null;
-                            }
+                        img.onclick = (e) => {
+                            e.stopPropagation();
+                            if(selectedCard === null) { selectedCard = idx; listen(); } 
+                            else { swap(selectedCard, idx); selectedCard = null; }
                         }
                     }
                     cardDiv.appendChild(img)
@@ -152,18 +166,18 @@ function listen(){
             table.appendChild(spot)
         })
 
-        // UPDATE: History and Chat logic
-        const histBox = document.getElementById("history")
+        // FIXED CHAT LISTENER
+        const histBox = document.getElementById("chatHistory")
         histBox.innerHTML = ""
         if(data.history){
-            const logs = Object.values(data.history)
-            logs.reverse().forEach(msg => {
-                const item = document.createElement("div")
-                item.style.marginBottom = "4px"
-                item.innerText = msg
-                histBox.appendChild(item)
+            const msgs = Object.values(data.history)
+            msgs.reverse().forEach(m => {
+                const div = document.createElement("div")
+                div.style.padding = "2px 0"
+                div.style.borderBottom = "1px solid #111"
+                div.innerText = m
+                histBox.appendChild(div)
             })
-            histBox.scrollTop = 0;
         }
     })
 }
@@ -177,34 +191,32 @@ async function swap(a, b){
     await set(pRef, cards)
 }
 
-// FIXED: Money Transfer + Log to History
 document.getElementById("moneyBtn").onclick = async () => {
-    const snap = await get(ref(db, `rooms/${room}/wallets`))
-    const wallets = snap.val() || {}
-    const others = Object.keys(wallets).filter(n => n !== player)
-    if(others.length === 0) return alert("No other players in room!")
-
-    const choice = prompt("Active players: " + others.join(", ") + "\nType the name to send to:")
-    if(!choice || !others.includes(choice)) return alert("Player not found in list.")
-
-    const amt = parseInt(prompt(`How much to send to ${choice}?`))
+    if(!selectedTarget) return alert("Select a player on the table first!")
+    const amt = parseInt(prompt(`Transfer to ${selectedTarget}. Amount:`))
     if(!amt || amt <= 0) return
-    if(wallets[player] < amt) return alert("Not enough money!")
+
+    const roomRef = ref(db, `rooms/${room}`)
+    const snap = await get(roomRef)
+    const data = snap.val()
+
+    if(data.wallets[player] < amt) return alert("Not enough money!")
 
     const updates = {}
-    updates[`rooms/${room}/wallets/${player}`] = wallets[player] - amt
-    updates[`rooms/${room}/wallets/${choice}`] = wallets[choice] + amt
+    updates[`rooms/${room}/wallets/${player}`] = data.wallets[player] - amt
+    updates[`rooms/${room}/wallets/${selectedTarget}`] = data.wallets[selectedTarget] + amt
     
     await update(ref(db), updates)
-    // Log to chat
-    await push(ref(db, `rooms/${room}/history`), `💸 ${player} sent ${amt}៛ to ${choice}`)
+    await push(ref(db, `rooms/${room}/history`), `💸 ${player} sent ${amt}៛ to ${selectedTarget}`)
+    
+    // FIXED: Clear selection after transfer
+    selectedTarget = null;
+    listen(); 
 }
 
-// FIXED: Chat Button Logic
-document.getElementById("chatBtn").onclick = async () => {
-    const msg = prompt("Enter your message:")
-    if(!msg) return
-    await push(ref(db, `rooms/${room}/history`), `💬 ${player}: ${msg}`)
+document.getElementById("chatBtn").onclick = () => {
+    const msg = prompt("Enter message:")
+    if(msg) push(ref(db, `rooms/${room}/history`), `💬 ${player}: ${msg}`)
 }
 
 document.getElementById("dealBtn").onclick = () => {
@@ -229,7 +241,7 @@ document.getElementById("revealBtn").onclick = () => {
         if(!d) return;
         for(let p in d) d[p].forEach((c, i) => { up[`rooms/${room}/players/${p}/${i}/faceUp`] = true })
         update(ref(db), up)
-        push(ref(db, `rooms/${room}/history`), `🔔 ${player} revealed their cards!`)
+        push(ref(db, `rooms/${room}/history`), `📢 ${player} revealed cards!`)
     })
 }
 
