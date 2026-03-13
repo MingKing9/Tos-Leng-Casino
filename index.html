@@ -68,11 +68,12 @@ margin-top:5px;
 width:40px;
 height:55px;
 border-radius:4px;
-border: 1px solid transparent;
+transition: transform 0.2s;
 }
 
 .selected-card {
-    border: 2px solid gold !important;
+    outline: 3px solid gold;
+    transform: scale(1.1);
 }
 
 .controls{
@@ -90,13 +91,14 @@ background:black;
 }
 
 #history {
-    height: 80px;
-    background: rgba(0,0,0,0.3);
+    height: 60px;
+    background: rgba(0,0,0,0.4);
     margin: 0 10px;
-    padding: 5px;
-    font-size: 12px;
+    padding: 8px;
+    font-size: 13px;
     overflow-y: auto;
-    border-radius: 5px;
+    border-radius: 8px;
+    border: 1px solid #1a5e37;
 }
 </style>
 </head>
@@ -124,7 +126,7 @@ background:black;
 <button id="dealBtn">Deal</button>
 <button id="readyBtn">Ready</button>
 <button id="revealBtn">Reveal</button>
-<button id="moneyBtn" style="background: gold; color: black;">Transfer</button>
+<button id="moneyBtn" style="background: #ffd700; color: #000;">Transfer</button>
 <button id="resetBtn">Reset</button>
 <button id="chatBtn">Chat</button>
 </div>
@@ -150,13 +152,10 @@ document.getElementById("startBtn").onclick = async () => {
     room = document.getElementById("room").value.trim().toLowerCase()
     player = document.getElementById("name").value.trim()
     let money = parseInt(document.getElementById("money").value) || 50000
-
     if(!room || !player) return alert("Enter name and room")
-
     const walletRef = ref(db, `rooms/${room}/wallets/${player}`)
     const snap = await get(walletRef)
     if(!snap.exists()) await set(walletRef, money)
-
     document.getElementById("login").style.display = "none"
     document.getElementById("game").style.display = "block"
     document.getElementById("info").innerText = `Room: ${room} | Player: ${player}`
@@ -180,8 +179,8 @@ function listen(){
 
             const isReady = data.readyStatus?.[p]
             const badge = document.createElement("div")
-            // Green tick implementation
-            badge.innerHTML = `${p}${isReady ? ' <span style="color:#00ff00;font-weight:bold;">✓</span>' : ""}<br>${wallets[p]}៛`
+            // FIXED: Tick symbol color logic
+            badge.innerHTML = `${p}${isReady ? ' <span style="color:#00FF00; font-weight:bold;">✓</span>' : ""}<br>${wallets[p]}៛`
             spot.appendChild(badge)
 
             const cardDiv = document.createElement("div")
@@ -197,7 +196,7 @@ function listen(){
                         img.onclick = () => {
                             if(selected === null) {
                                 selected = idx
-                                listen() // Refresh UI to show gold border
+                                listen() // Re-render to show selection
                             } else {
                                 swap(selected, idx)
                                 selected = null
@@ -211,46 +210,54 @@ function listen(){
             table.appendChild(spot)
         })
 
-        // Update History/Chat
+        // FIXED: History display logic
         const hist = document.getElementById("history")
         hist.innerHTML = ""
         if(data.history){
-            Object.values(data.history).reverse().forEach(m => {
+            const logs = Object.values(data.history)
+            logs.slice(-5).reverse().forEach(m => {
                 const d = document.createElement("div")
-                d.innerText = m
+                d.style.borderBottom = "1px solid #222"
+                d.innerText = "💸 " + m
                 hist.appendChild(d)
             })
         }
     })
 }
 
+// FIXED: Improved Swap Logic
 async function swap(a, b){
+    if(a === b) return;
     const pRef = ref(db, `rooms/${room}/players/${player}`)
     const snap = await get(pRef)
     let cards = snap.val()
     if(!cards) return;
-    [cards[a], cards[b]] = [cards[b], cards[a]]
+    const temp = cards[a];
+    cards[a] = cards[b];
+    cards[b] = temp;
     await set(pRef, cards)
 }
 
+// FIXED: Complete Money Transfer with validation and History
 document.getElementById("moneyBtn").onclick = async () => {
-    const target = prompt("Who to send money to?")
-    const amt = parseInt(prompt("How much?"))
-    if(!target || !amt || amt <= 0) return
+    const target = prompt("Target Player Name:")
+    if(!target) return
+    const amt = parseInt(prompt("Amount to send:"))
+    if(!amt || amt <= 0) return
 
     const roomRef = ref(db, `rooms/${room}`)
     const snap = await get(roomRef)
     const data = snap.val()
 
-    if(!data.wallets[target]) return alert("Player not found")
-    if(data.wallets[player] < amt) return alert("Not enough money")
+    if(!data.wallets || !data.wallets[target]) return alert("Player not found!")
+    if(data.wallets[player] < amt) return alert("Insufficient balance!")
 
     const updates = {}
-    updates[`wallets/${player}`] = data.wallets[player] - amt
-    updates[`wallets/${target}`] = data.wallets[target] + amt
+    updates[`rooms/${room}/wallets/${player}`] = data.wallets[player] - amt
+    updates[`rooms/${room}/wallets/${target}`] = data.wallets[target] + amt
     
-    await update(ref(db, `rooms/${room}`), updates)
-    push(ref(db, `rooms/${room}/history`), `${player} sent ${amt}៛ to ${target}`)
+    await update(ref(db), updates)
+    await push(ref(db, `rooms/${room}/history`), `${player} sent ${amt}៛ to ${target}`)
 }
 
 document.getElementById("dealBtn").onclick = () => {
