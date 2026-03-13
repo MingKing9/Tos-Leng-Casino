@@ -290,4 +290,35 @@ function listenChat(){
                 let d=document.createElement("div");
                 d.style.marginBottom="8px";
                 d.innerHTML=`<span style="color:var(--gold); font-weight:bold;">${c.u}:</span> <span style="color:#fff;">${c.m}</span>`;
-               
+                area.appendChild(d);
+            });
+            if(!isChatOpen) document.getElementById("chat-dot").style.display="block";
+        }
+        area.scrollTop=area.scrollHeight;
+    });
+}
+
+// Transfer
+window.openTransfer=async()=>{
+    const sel=document.getElementById("transfer-to"); sel.innerHTML="";
+    const walletsSnap=await get(ref(db,`rooms/${room}/wallets`));
+    const wallets=walletsSnap.val()||{};
+    Object.keys(wallets).filter(p=>p!==player).forEach(p=>{
+        let opt=document.createElement("option"); opt.value=p; opt.innerText=p; sel.appendChild(opt);
+    });
+    document.getElementById("transfer-modal").style.display="flex";
+};
+window.confirmTransfer=async()=>{
+    const to=document.getElementById("transfer-to").value;
+    const amt=parseInt(document.getElementById("transfer-amount").value);
+    if(!to||!amt||amt<=0) return alert("Invalid amount");
+    const fromRef=ref(db,`rooms/${room}/wallets/${player}`);
+    const toRef=ref(db,`rooms/${room}/wallets/${to}`);
+    await runTransaction(fromRef,val=>val>=amt?val-amt:null);
+    await runTransaction(toRef,val=>val?val+amt:amt);
+    document.getElementById("transfer-modal").style.display="none";
+};
+</script>
+
+</body>
+</html>
