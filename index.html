@@ -189,25 +189,24 @@ window.join = function() {
     lang = document.getElementById("langSelect").value;
     const money = parseInt(document.getElementById("moneyInput").value) || 50000;
     
-    if(!room || !player) {
-        alert("Please input name and room");
-        return;
-    }
+    if(!room || !player) return alert("Please input name/room");
 
-    // Reference to status
-    const statusRef = ref(db, `rooms/${room}/onlineStatus/${player}`);
+    // 1. Set the initial money (only if it doesn't exist, to avoid resetting)
+    const walletRef = ref(db, `rooms/${room}/wallets/${player}`);
+    get(walletRef).then((snapshot) => {
+        if (!snapshot.exists()) {
+            set(walletRef, money);
+        }
+    });
 
-    // Set player data
-    set(ref(db, `rooms/${room}/wallets/${player}`), money);
-    set(statusRef, "online");
+    // 2. THIS IS THE FIX: Automatically remove player presence on disconnect
+    // This removes their 'ready' status and 'cards' when they close the tab,
+    // but LEAVES their money in the wallet alone.
+    onDisconnect(ref(db, `rooms/${room}/players/${player}`)).remove();
+    onDisconnect(ref(db, `rooms/${room}/readyStatus/${player}`)).remove();
 
-    // This tells Firebase: "When I leave, set status to offline"
-    onDisconnect(statusRef).set("offline");
-
-    // Hide login
     document.getElementById("login-screen").style.display = "none";
     
-    // Start listening
     applyTranslations();
     listen();
     listenChat();
