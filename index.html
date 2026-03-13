@@ -100,6 +100,17 @@
         }
     };
 
+    window.leaveGame = () => {
+    if (confirm("Are you sure you want to leave the table?")) {
+        // This removes them from the game view, but their money stays safe!
+        set(ref(db, `rooms/${room}/players/${player}`), null);
+        set(ref(db, `rooms/${room}/readyStatus/${player}`), null);
+        
+        // This refreshes the page so the player sees the login screen
+        location.reload(); 
+    }
+};
+
     function applyTranslations() {
         const d = dictionary[lang];
         // Main UI
@@ -128,6 +139,10 @@
 <div id="room-info-bar">
     <span id="display-room">តុ: -</span>
     <span id="display-name">អ្នកលេង: -</span>
+    
+    <button onclick="leaveGame()" style="background:red; color:white; border:none; padding:5px; cursor:pointer; border-radius:4px; margin-left:10px;">
+        LEAVE
+    </button>
 </div>
 
 <div id="game-wrapper">
