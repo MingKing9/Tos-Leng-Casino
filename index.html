@@ -11,6 +11,7 @@ margin:0;
 font-family:-apple-system;
 background:#0a2114;
 color:white;
+overflow: hidden;
 }
 
 #login{
@@ -19,7 +20,7 @@ display:flex; flex-direction:column; align-items:center; justify-content:center;
 z-index:100;
 }
 
-input, select{ padding:12px; margin:6px; width:220px; border-radius:8px; border:none; text-align:center; }
+input{ padding:12px; margin:6px; width:220px; border-radius:8px; border:none; text-align:center; }
 button{ padding:12px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; }
 
 #table{
@@ -27,27 +28,34 @@ height:45vh; position:relative; border:8px solid #3d2b1f; border-radius:40px;
 margin:10px; background:radial-gradient(circle,#1a5e37,#0a2114);
 }
 
-.player{ position:absolute; transform:translate(-50%,-50%); text-align:center; padding:5px; }
+.player{ position:absolute; transform:translate(-50%,-50%); text-align:center; }
 .cards{ display:grid; grid-template-columns:repeat(3,40px); grid-template-rows:repeat(2,55px); gap:4px; margin-top:5px; }
 .cards img{ width:40px; height:55px; border-radius:4px; }
 .selected-card { outline: 3px solid #00ff00; transform: scale(1.1); }
 
-.controls{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; padding:10px; }
-.topbar{ display:flex; justify-content:space-between; padding:8px; background:black; }
-
-/* Chat and History Styling */
-#chatHistory {
+/* CHAT BOX STYLES */
+#chatArea {
     height: 120px; background: rgba(0,0,0,0.8); margin: 0 10px;
     padding: 10px; font-size: 13px; overflow-y: auto; border-radius: 8px; 
     border: 1px solid #1a5e37; color: #00ff00;
 }
 
-/* Modal for Transfer */
-#transferModal {
-    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); 
+.controls{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; padding:10px; }
+.topbar{ display:flex; justify-content:space-between; padding:8px; background:black; }
+
+/* TRANSFER LIST MODAL */
+#transferBox {
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); 
     z-index:200; align-items:center; justify-content:center;
 }
-.modal-content { background:#1a5e37; padding:20px; border-radius:15px; text-align:center; display:flex; flex-direction:column; }
+.transfer-content { 
+    background:#1a5e37; padding:20px; border-radius:15px; width: 80%; max-width: 300px;
+}
+.player-option {
+    background: #0a2114; padding: 10px; margin: 5px 0; border-radius: 5px;
+    cursor: pointer; border: 1px solid #3d2b1f;
+}
+.player-option:hover { background: #1e7a46; }
 </style>
 </head>
 
@@ -61,15 +69,11 @@ margin:10px; background:radial-gradient(circle,#1a5e37,#0a2114);
 <button id="startBtn">START</button>
 </div>
 
-<div id="transferModal">
-    <div class="modal-content">
-        <h3>Transfer Money</h3>
-        <select id="playerList"></select>
-        <input id="transferAmount" type="number" placeholder="Amount">
-        <div style="display:flex; gap:10px; margin-top:10px;">
-            <button id="confirmTransfer" style="background:gold; flex:1">Send</button>
-            <button id="cancelTransfer" style="background:#555; color:white; flex:1">Cancel</button>
-        </div>
+<div id="transferBox">
+    <div class="transfer-content">
+        <h3>Select Player</h3>
+        <div id="nameList" style="max-height: 200px; overflow-y: auto;"></div>
+        <button onclick="document.getElementById('transferBox').style.display='none'" style="margin-top:10px; width:100%; background:#555; color:white;">Close</button>
     </div>
 </div>
 
@@ -80,7 +84,8 @@ margin:10px; background:radial-gradient(circle,#1a5e37,#0a2114);
 </div>
 
 <div id="table"></div>
-<div id="chatHistory"></div>
+
+<div id="chatArea"></div>
 
 <div class="controls">
 <button id="dealBtn">Deal</button>
@@ -141,6 +146,7 @@ function listen(){
 
             const isReady = data.readyStatus?.[p]
             const badge = document.createElement("div")
+            // Fixed: Tick symbol color logic
             badge.innerHTML = `<b>${p}</b>${isReady ? ' <span style="color:#00ff00; font-weight:bold;">✓</span>' : ""}<br>${wallets[p]}៛`
             spot.appendChild(badge)
 
@@ -164,15 +170,16 @@ function listen(){
             table.appendChild(spot)
         })
 
-        // Unified Chat & History
-        const histBox = document.getElementById("chatHistory")
-        histBox.innerHTML = ""
+        // FIXED CHAT DISPLAY
+        const chatArea = document.getElementById("chatArea")
+        chatArea.innerHTML = ""
         if(data.history){
-            Object.values(data.history).reverse().forEach(m => {
-                const d = document.createElement("div")
-                d.style.padding = "2px 0"; d.style.borderBottom = "1px solid #111";
-                d.innerText = m
-                histBox.appendChild(d)
+            Object.values(data.history).reverse().forEach(msg => {
+                const line = document.createElement("div")
+                line.style.padding = "2px 0"
+                line.style.borderBottom = "1px solid #111"
+                line.innerText = msg
+                chatArea.appendChild(line)
             })
         }
     })
@@ -186,46 +193,44 @@ async function swap(a, b){
     await set(pRef, cards)
 }
 
-// DROPDOWN TRANSFER LOGIC
+// TRANSFER WITH LIST DOWN OPTION
 document.getElementById("moneyBtn").onclick = async () => {
     const snap = await get(ref(db, `rooms/${room}/wallets`))
     const wallets = snap.val() || {}
     const others = Object.keys(wallets).filter(n => n !== player)
     
-    if(others.length === 0) return alert("No other players to send to.")
+    if(others.length === 0) return alert("No one else is here!")
 
-    const list = document.getElementById("playerList")
-    list.innerHTML = others.map(p => `<option value="${p}">${p}</option>`).join("")
-    document.getElementById("transferModal").style.display = "flex"
+    const listDiv = document.getElementById("nameList")
+    listDiv.innerHTML = ""
+    
+    others.forEach(targetName => {
+        const opt = document.createElement("div")
+        opt.className = "player-option"
+        opt.innerText = targetName
+        opt.onclick = () => finishTransfer(targetName, wallets)
+        listDiv.appendChild(opt)
+    })
+    document.getElementById("transferBox").style.display = "flex"
 }
 
-document.getElementById("cancelTransfer").onclick = () => {
-    document.getElementById("transferModal").style.display = "none"
-}
-
-document.getElementById("confirmTransfer").onclick = async () => {
-    const target = document.getElementById("playerList").value
-    const amt = parseInt(document.getElementById("transferAmount").value)
-    if(!amt || amt <= 0) return alert("Enter a valid amount")
-
-    const snap = await get(ref(db, `rooms/${room}/wallets`))
-    const wallets = snap.val()
-    if(wallets[player] < amt) return alert("Insufficient funds!")
+async function finishTransfer(target, wallets) {
+    const amt = parseInt(prompt(`Amount to send to ${target}:`))
+    if(!amt || amt <= 0) return
+    if(wallets[player] < amt) return alert("Not enough money!")
 
     const updates = {}
     updates[`rooms/${room}/wallets/${player}`] = wallets[player] - amt
     updates[`rooms/${room}/wallets/${target}`] = wallets[target] + amt
     
     await update(ref(db), updates)
-    await push(ref(db, `rooms/${room}/history`), `💸 ${player} sent ${amt}៛ to ${target}`)
-    
-    document.getElementById("transferModal").style.display = "none"
-    document.getElementById("transferAmount").value = ""
+    await push(ref(db, `rooms/${room}/history`), `${player} sent ${amt}៛ to ${target}`)
+    document.getElementById("transferBox").style.display = "none"
 }
 
-// REAL CHAT LOGIC
+// CHAT BUTTON
 document.getElementById("chatBtn").onclick = () => {
-    const msg = prompt("Chat message:")
+    const msg = prompt("Type your message:")
     if(msg) push(ref(db, `rooms/${room}/history`), `💬 ${player}: ${msg}`)
 }
 
@@ -249,7 +254,7 @@ document.getElementById("revealBtn").onclick = () => {
         const d = snap.val(); let up = {}
         for(let p in d) d[p].forEach((c, i) => up[`rooms/${room}/players/${p}/${i}/faceUp`] = true)
         update(ref(db), up)
-        push(ref(db, `rooms/${room}/history`), `📢 ${player} revealed cards!`)
+        push(ref(db, `rooms/${room}/history`), `📢 ${player} revealed!`)
     })
 }
 
