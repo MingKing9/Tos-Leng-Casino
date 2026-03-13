@@ -5,21 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tos Leng</title>
 <style>
-    body { margin:0; font-family: sans-serif; background:#0a2114; color:white; }
-    #login { position:fixed; inset:0; background:black; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:100; }
+    body { margin:0; font-family: sans-serif; background:#0a2114; color:white; overflow:hidden; }
+    
+    /* Login Screen */
+    #login { position:fixed; inset:0; background:black; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:999; }
     input { padding:12px; margin:5px; width:80%; border-radius:8px; border:none; text-align:center; }
     button { padding:12px; margin:5px; width:80%; border:none; border-radius:8px; font-weight:bold; cursor:pointer; }
-    #game { display:none; padding:10px; }
-    #table { height:40vh; border:4px solid #3d2b1f; border-radius:20px; margin-bottom:10px; background:#113322; }
-
-    /* CHAT MODAL - HALF SCREEN */
+    
+    /* Main Game Layout */
+    #game { padding:10px; }
+    #table { height:40vh; border:4px solid #3d2b1f; border-radius:20px; background:#113322; display:flex; align-items:center; justify-content:center; }
+    .controls { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:20px; }
+    
+    /* CHAT MODAL - Only appears when clicked */
     #chatModal {
-        display: none; position: fixed; bottom: 0; left: 0; right: 0; 
+        display: none; position: fixed; bottom: 0; left: 0; width: 100%; 
         height: 50vh; background: #000; border-top: 3px solid #1a5e37;
-        flex-direction: column; padding: 10px; z-index: 200;
+        flex-direction: column; padding: 10px; z-index: 100;
     }
-    #chatHistory { flex: 1; overflow-y: auto; font-size: 14px; margin-bottom: 10px; }
-    #chatInput { display: flex; gap: 5px; }
+    #chatHistory { flex: 1; overflow-y: auto; font-size: 14px; margin-bottom: 10px; border: 1px solid #333; }
 </style>
 </head>
 <body>
@@ -33,23 +37,24 @@
 </div>
 
 <div id="game">
-    <div id="table"></div>
-    <button id="openChatBtn" style="background:#007bff; color:white">Open Chat & History</button>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-top:10px;">
+    <div id="table">Game Table (Players & Cards Here)</div>
+    <div class="controls">
         <button id="dealBtn">Deal</button>
         <button id="transferBtn" style="background:gold">Transfer</button>
+        <button id="revealBtn">Reveal</button>
+        <button id="openChatBtn" style="background:#007bff; color:white">Chat & History</button>
     </div>
 </div>
 
 <div id="chatModal">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
         <h3>Chat & History</h3>
-        <button onclick="document.getElementById('chatModal').style.display='none'" style="width:40px; background:#ff4444">X</button>
+        <button id="closeChatBtn" style="width:40px; background:#ff4444">X</button>
     </div>
     <div id="chatHistory"></div>
-    <div id="chatInput">
-        <input id="msgInput" placeholder="Type message...">
-        <button id="sendBtn" style="width:80px; background:#00ff00">Send</button>
+    <div style="display:flex; gap:5px;">
+        <input id="msgInput" placeholder="Message..." style="flex:1">
+        <button id="sendBtn" style="width:60px">Send</button>
     </div>
 </div>
 
@@ -63,13 +68,14 @@ const db = getDatabase(initializeApp({
 
 let room, player;
 
+// Login Logic
 document.getElementById("startBtn").onclick = async () => {
     room = document.getElementById("room").value.toLowerCase();
     player = document.getElementById("name").value;
     let initialMoney = parseInt(document.getElementById("amount").value);
     
     if(!room || !player) return alert("Enter Room and Name");
-
+    
     const walletRef = ref(db, `rooms/${room}/wallets/${player}`);
     const snap = await get(walletRef);
     if(!snap.exists()) await set(walletRef, initialMoney);
@@ -79,6 +85,7 @@ document.getElementById("startBtn").onclick = async () => {
     listen();
 };
 
+// Chat/History Listener
 function listen() {
     onValue(ref(db, `rooms/${room}`), snap => {
         const data = snap.val() || {};
@@ -90,7 +97,9 @@ function listen() {
     });
 }
 
+// UI Controls
 document.getElementById("openChatBtn").onclick = () => document.getElementById("chatModal").style.display = "flex";
+document.getElementById("closeChatBtn").onclick = () => document.getElementById("chatModal").style.display = "none";
 
 document.getElementById("sendBtn").onclick = () => {
     const msg = document.getElementById("msgInput").value;
@@ -104,8 +113,7 @@ document.getElementById("transferBtn").onclick = async () => {
     const snap = await get(ref(db, `rooms/${room}/wallets`));
     const wallets = snap.val();
     const names = Object.keys(wallets).filter(n => n !== player);
-    let msg = "Select target (number):\n";
-    names.forEach((n, i) => msg += `${i}: ${n}\n`);
+    let msg = "Select target (number):\n" + names.map((n, i) => `${i}: ${n}`).join("\n");
     const idx = prompt(msg);
     if(idx !== null && names[idx]) {
         const amt = parseInt(prompt(`Amount to send to ${names[idx]}:`));
@@ -113,8 +121,8 @@ document.getElementById("transferBtn").onclick = async () => {
             const updates = {};
             updates[`rooms/${room}/wallets/${player}`] = wallets[player] - amt;
             updates[`rooms/${room}/wallets/${names[idx]}`] = wallets[names[idx]] + amt;
-            update(ref(db), updates);
-            push(ref(db, `rooms/${room}/history`), `💸 ${player} sent ${amt} to ${names[idx]}`);
+            await update(ref(db), updates);
+            await push(ref(db, `rooms/${room}/history`), `💸 ${player} sent ${amt} to ${names[idx]}`);
         }
     }
 };
