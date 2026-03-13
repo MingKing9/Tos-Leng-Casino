@@ -1,17 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Tos Leng</title>
 
 <style>
-:root { --gold:#d4af37; --felt:#1a5e37; --wood:#3d2b1f; }
+
+:root{
+--gold:#d4af37;
+--felt:#1a5e37;
+--wood:#3d2b1f;
+}
 
 body,html{
 margin:0;
-padding:0;
-width:100%;
 height:100%;
 overflow:hidden;
 background:#000;
@@ -77,16 +84,15 @@ margin-top:5px;
 width:35px;
 height:50px;
 border-radius:4px;
-background:white;
 }
 
 .controls-bar{
 background:#111;
-border-top:1px solid #333;
 display:grid;
 grid-template-columns:1fr 1fr 1fr;
 gap:8px;
 padding:10px;
+border-top:1px solid #333;
 }
 
 button{
@@ -125,7 +131,29 @@ color:white;
 text-align:center;
 }
 
+#chat-panel{
+position:fixed;
+right:-300px;
+top:0;
+width:280px;
+height:100%;
+background:#111;
+transition:0.3s;
+display:flex;
+flex-direction:column;
+}
+
+#chat-panel.open{right:0;}
+
+#chat-msgs{
+flex:1;
+overflow-y:auto;
+padding:10px;
+color:white;
+}
+
 </style>
+
 </head>
 
 <body>
@@ -150,6 +178,8 @@ text-align:center;
 
 <span id="display-name">Player</span>
 
+<button onclick="logout()" class="btn-red">Logout</button>
+
 </div>
 
 <div id="game-wrapper">
@@ -160,11 +190,11 @@ text-align:center;
 
 <button class="btn-gold" onclick="openTransfer()">Money</button>
 
+<button class="btn-gold" onclick="openChat()">Chat</button>
+
 <button id="dealBtn" class="btn-blue" onclick="deal()">Deal</button>
 
-<button id="readyBtn" class="btn-green" onclick="toggleReady(true)">Ready</button>
-
-<button id="notReadyBtn" class="btn-red" onclick="toggleReady(false)">Unready</button>
+<button id="readyBtn" class="btn-green" onclick="toggleReady()">Ready</button>
 
 <button class="btn-gold" onclick="reveal()">Reveal</button>
 
@@ -174,10 +204,26 @@ text-align:center;
 
 </div>
 
+<div id="chat-panel">
+
+<div style="padding:10px;color:var(--gold)">Chat</div>
+
+<div id="chat-msgs"></div>
+
+<div style="display:flex;padding:5px">
+
+<input id="chatInp" style="flex:1">
+
+<button onclick="sendChat()">Send</button>
+
+</div>
+
+</div>
+
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getDatabase, ref, set, update, onValue, get, push, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import{getDatabase,ref,set,update,onValue,get,push,runTransaction}from"https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
 const firebaseConfig={
 apiKey:"AIzaSyBjsVUxlNjGUnYioHOlKmk1wEMoVTSVxLw",
@@ -189,7 +235,7 @@ projectId:"the-family-card-game"
 const app=initializeApp(firebaseConfig);
 const db=getDatabase(app);
 
-let room,player;
+let room,player,selectedIdx=null;
 
 window.join=async function(){
 
@@ -197,13 +243,13 @@ room=document.getElementById("roomInput").value.trim().toLowerCase();
 player=document.getElementById("nameInput").value.trim();
 let money=parseInt(document.getElementById("moneyInput").value)||50000;
 
-if(!room||!player) return alert("Enter room and name");
+if(!room||!player)return;
 
 const walletRef=ref(db,`rooms/${room}/wallets/${player}`);
 const snap=await get(walletRef);
 
 if(!snap.exists()){
-await set(walletRef,money);
+set(walletRef,money);
 }
 
 document.getElementById("login-screen").style.display="none";
@@ -212,6 +258,7 @@ document.getElementById("display-room").innerText="Room: "+room;
 document.getElementById("display-name").innerText="Player: "+player;
 
 listen();
+listenChat();
 
 }
 
@@ -221,6 +268,7 @@ onValue(ref(db,`rooms/${room}`),snap=>{
 
 const data=snap.val()||{};
 const table=document.getElementById("poker-table");
+
 table.innerHTML="";
 
 const wallets=data.wallets||{};
@@ -236,12 +284,53 @@ spot.className="player-spot";
 spot.style.left=(50+35*Math.cos(angle))+"%";
 spot.style.top=(50+35*Math.sin(angle))+"%";
 
+const ready=data.readyStatus&&data.readyStatus[p];
+
 const badge=document.createElement("div");
 badge.className="player-badge";
 
-badge.innerHTML=p+"<br>"+(wallets[p]||0)+"៛";
+badge.innerHTML=`${p}${ready?" ✓":""}<br>${wallets[p]}៛`;
 
 spot.appendChild(badge);
+
+const cardsDiv=document.createElement("div");
+cardsDiv.className="card-row";
+
+if(data.players&&data.players[p]){
+
+data.players[p].forEach((c,idx)=>{
+
+const img=document.createElement("img");
+img.className="card-img";
+
+if(c.faceUp||p===player){
+img.src=getCardImg(c.val);
+}else{
+img.src="https://deckofcardsapi.com/static/img/back.png";
+}
+
+if(p===player&&!ready&&!c.faceUp){
+
+img.onclick=()=>{
+
+if(selectedIdx===null){
+selectedIdx=idx;
+}else{
+swapCards(selectedIdx,idx);
+selectedIdx=null;
+}
+
+};
+
+}
+
+cardsDiv.appendChild(img);
+
+});
+
+}
+
+spot.appendChild(cardsDiv);
 
 table.appendChild(spot);
 
@@ -251,19 +340,45 @@ table.appendChild(spot);
 
 }
 
+async function swapCards(a,b){
+
+const pRef=ref(db,`rooms/${room}/players/${player}`);
+
+const snap=await get(pRef);
+
+let c=snap.val();
+
+[c[a],c[b]]=[c[b],c[a]];
+
+set(pRef,c);
+
+}
+
 window.deal=function(){
 
-const suits=["♠","♥","♦","♣"];
-const vals=["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+const s=["♠","♥","♦","♣"];
+const v=["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
 
-let deck=[];
-suits.forEach(s=>vals.forEach(v=>deck.push(v+s)));
+let d=[];
+s.forEach(si=>v.forEach(vi=>d.push(vi+si)));
 
-deck=deck.sort(()=>Math.random()-0.5);
+d=d.sort(()=>Math.random()-0.5);
 
-const cards=deck.slice(0,6).map(v=>({val:v,faceUp:false}));
+let cards=d.slice(0,6).map(val=>({val,faceUp:false}));
 
 set(ref(db,`rooms/${room}/players/${player}`),cards);
+
+set(ref(db,`rooms/${room}/readyStatus/${player}`),false);
+
+}
+
+window.toggleReady=function(){
+
+const rRef=ref(db,`rooms/${room}/readyStatus/${player}`);
+
+get(rRef).then(s=>{
+set(rRef,!s.val());
+});
 
 }
 
@@ -272,7 +387,6 @@ window.reveal=function(){
 get(ref(db,`rooms/${room}/players`)).then(snap=>{
 
 let d=snap.val();
-if(!d)return;
 
 let up={};
 
@@ -295,9 +409,12 @@ set(ref(db,`rooms/${room}/readyStatus`),null);
 
 }
 
-window.toggleReady=function(s){
+window.logout=function(){
 
-set(ref(db,`rooms/${room}/readyStatus/${player}`),s);
+set(ref(db,`rooms/${room}/players/${player}`),null);
+set(ref(db,`rooms/${room}/readyStatus/${player}`),null);
+
+location.reload();
 
 }
 
@@ -306,10 +423,9 @@ window.openTransfer=function(){
 const to=prompt("Send to:");
 const amt=parseInt(prompt("Amount"));
 
-if(!to||!amt) return;
+if(!to||!amt)return;
 
 runTransaction(ref(db,`rooms/${room}/wallets/${player}`),c=>(c||0)-amt);
-
 runTransaction(ref(db,`rooms/${room}/wallets/${to}`),c=>(c||0)+amt);
 
 push(ref(db,`rooms/${room}/history`),{
@@ -321,7 +437,66 @@ time:Date.now()
 
 }
 
+window.openChat=function(){
+document.getElementById("chat-panel").classList.toggle("open");
+}
+
+window.sendChat=function(){
+
+const inp=document.getElementById("chatInp");
+
+if(!inp.value.trim())return;
+
+push(ref(db,`rooms/${room}/chats`),{
+u:player,
+m:inp.value,
+t:Date.now()
+});
+
+inp.value="";
+
+}
+
+function listenChat(){
+
+onValue(ref(db,`rooms/${room}/chats`),snap=>{
+
+const area=document.getElementById("chat-msgs");
+
+area.innerHTML="";
+
+const data=snap.val();
+
+if(!data)return;
+
+Object.values(data).sort((a,b)=>a.t-b.t).forEach(c=>{
+
+let d=document.createElement("div");
+
+d.innerHTML=`<b>${c.u}</b>: ${c.m}`;
+
+area.appendChild(d);
+
+});
+
+});
+
+}
+
+function getCardImg(v){
+
+const suitMap={"♠":"S","♥":"H","♦":"D","♣":"C"};
+
+let val=v.replace(/[♠♥♦♣]/g,'');
+
+if(val==="10")val="0";
+
+return`https://deckofcardsapi.com/static/img/${val}${suitMap[v.slice(-1)]}.png`;
+
+}
+
 </script>
 
 </body>
+
 </html>
