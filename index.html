@@ -230,27 +230,23 @@ window.join = function() {
         document.getElementById("txt-chat-title").innerText = d.chatT;
     }
 
-  function listen() {
+function listen() {
         onValue(ref(db, `rooms/${room}`), snap => {
             const data = snap.val() || {};
             const table = document.getElementById("poker-table");
             table.innerHTML = "";
             
             const wallets = data.wallets || {};
-            const status = data.onlineStatus || {}; // Get the status list
             const players = Object.keys(wallets);
             const myCards = (data.players && data.players[player]) ? data.players[player] : null;
             const amIReady = (data.readyStatus && data.readyStatus[player]);
 
+            // Re-enabling buttons
             document.getElementById("dealBtn").style.display = myCards ? "none" : "block";
             document.getElementById("readyBtn").style.display = (myCards && !amIReady) ? "block" : "none";
             document.getElementById("notReadyBtn").style.display = amIReady ? "block" : "none";
 
             players.forEach((p, i) => {
-                // --- THE FILTER: Only draw players who are 'online' ---
-                if (status[p] !== "online") return; 
-                // -----------------------------------------------------
-
                 const isPReady = (data.readyStatus && data.readyStatus[p]);
                 const angle = (i * (360 / players.length)) * (Math.PI / 180);
                 const spot = document.createElement("div");
