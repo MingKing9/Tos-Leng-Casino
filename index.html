@@ -6,25 +6,24 @@
 <title>Tos Leng</title>
 
 <style>
-body{ margin:0; font-family:-apple-system; background:#0a2114; color:white; overflow:hidden; }
-
-/* Login */
-#login{ position:fixed; inset:0; background:black; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:100; }
-input{ padding:12px; margin:6px; width:220px; border-radius:8px; border:none; text-align:center; }
-button{ padding:12px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; }
-
-/* Table */
-#table{ height:50vh; position:relative; border:8px solid #3d2b1f; border-radius:40px; margin:10px; background:radial-gradient(circle,#1a5e37,#0a2114); }
-.player{ position:absolute; transform:translate(-50%,-50%); text-align:center; padding:10px; }
-.cards{ display:grid; grid-template-columns:repeat(3,40px); grid-template-rows:repeat(2,55px); gap:4px; margin-top:5px; }
-.cards img{ width:40px; height:55px; border-radius:4px; }
-
-/* Chat Modal */
-#chatModal {
-    display: none; position: fixed; bottom: 0; left: 0; width: 100%; height: 50vh;
-    background: #0a2114; border-top: 4px solid #3d2b1f; z-index: 200; flex-direction: column;
-}
-#historyArea { flex: 1; overflow-y: auto; padding: 10px; color: #00ff00; }
+    body { margin:0; font-family:-apple-system; background:#0a2114; color:white; overflow:hidden; }
+    #login { position:fixed; inset:0; background:black; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:100; }
+    input { padding:12px; margin:6px; width:220px; border-radius:8px; border:none; text-align:center; }
+    button { padding:12px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; }
+    
+    #table { height:55vh; position:relative; border:8px solid #3d2b1f; border-radius:40px; margin:10px; background:radial-gradient(circle,#1a5e37,#0a2114); }
+    .player { position:absolute; transform:translate(-50%,-50%); text-align:center; padding:10px; }
+    .cards { display:grid; grid-template-columns:repeat(3,40px); grid-template-rows:repeat(2,55px); gap:4px; margin-top:5px; }
+    .cards img { width:40px; height:55px; border-radius:4px; }
+    
+    .controls { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; padding:10px; }
+    
+    /* Chat Modal (Overlay) */
+    #chatModal { 
+        display:none; position:fixed; bottom:0; left:0; width:100%; height:50vh; 
+        background:#113322; border-top:4px solid #3d2b1f; z-index:200; flex-direction:column;
+    }
+    #history { flex:1; overflow-y:auto; padding:10px; font-size:13px; color:#00ff00; }
 </style>
 </head>
 
@@ -39,27 +38,26 @@ button{ padding:12px; border:none; border-radius:8px; font-weight:bold; cursor:p
 </div>
 
 <div id="game" style="display:none">
-    <div class="topbar"><span id="info"></span></div>
     <div id="table"></div>
-    <div class="controls" style="display:grid; grid-template-columns:repeat(3,1fr); gap:6px; padding:10px;">
+    <div class="controls">
         <button id="dealBtn">Deal</button>
         <button id="readyBtn">Ready</button>
         <button id="revealBtn">Reveal</button>
-        <button id="moneyBtn" style="background:gold">Transfer</button>
+        <button id="moneyBtn" style="background:gold; color:black">Transfer</button>
         <button id="resetBtn">Reset</button>
         <button id="chatBtn" style="background:#007bff; color:white">Chat</button>
     </div>
 </div>
 
 <div id="chatModal">
-    <div style="padding:10px; display:flex; justify-content:space-between;">
+    <div style="padding:10px; display:flex; justify-content:space-between; align-items:center;">
         <h3>History & Chat</h3>
         <button id="closeChat" style="background:#cc0000">X</button>
     </div>
-    <div id="historyArea"></div>
-    <div style="padding:10px;">
-        <input id="chatInput" placeholder="Type message..." style="width:70%">
-        <button id="sendChat" style="background:#00ff00; color:black">Send</button>
+    <div id="history"></div>
+    <div style="display:flex; padding:10px; gap:5px;">
+        <input id="msgInput" placeholder="Message..." style="flex:1">
+        <button id="sendBtn" style="background:#00ff00">Send</button>
     </div>
 </div>
 
@@ -76,13 +74,7 @@ let room, player;
 document.getElementById("startBtn").onclick = async () => {
     room = document.getElementById("room").value.trim().toLowerCase();
     player = document.getElementById("name").value.trim();
-    let money = parseInt(document.getElementById("money").value) || 50000;
     if(!room || !player) return alert("Enter name and room");
-
-    const wRef = ref(db, `rooms/${room}/wallets/${player}`);
-    const snap = await get(wRef);
-    if(!snap.exists()) await set(wRef, money);
-
     document.getElementById("login").style.display = "none";
     document.getElementById("game").style.display = "block";
     listen();
@@ -91,10 +83,9 @@ document.getElementById("startBtn").onclick = async () => {
 function listen(){
     onValue(ref(db, `rooms/${room}`), snap => {
         const data = snap.val() || {};
-        // Table rendering logic...
-        const histBox = document.getElementById("historyArea");
+        const histBox = document.getElementById("history");
         histBox.innerHTML = "";
-        if(data.history) {
+        if(data.history){
             Object.values(data.history).reverse().forEach(msg => {
                 histBox.innerHTML += `<div>• ${msg}</div>`;
             });
@@ -102,35 +93,39 @@ function listen(){
     });
 }
 
-// DROPDOWN TRANSFER
+// Fixed Transfer: Dropdown style selection
 document.getElementById("moneyBtn").onclick = async () => {
     const snap = await get(ref(db, `rooms/${room}/wallets`));
     const wallets = snap.val() || {};
     const others = Object.keys(wallets).filter(n => n !== player);
-    if(others.length === 0) return alert("No players to transfer to.");
+    
+    if(others.length === 0) return alert("No other players!");
 
-    let msg = "Select Player:\n" + others.map((n, i) => `${i}: ${n}`).join("\n");
-    const idx = prompt(msg);
-    if(idx !== null && others[idx]) {
-        const target = others[idx];
+    let list = others.map((n, i) => `${i + 1}: ${n}`).join("\n");
+    const choice = prompt("Select player to send to (Enter number):\n" + list);
+    const index = parseInt(choice) - 1;
+
+    if(others[index]) {
+        const target = others[index];
         const amt = parseInt(prompt(`Amount to send to ${target}:`));
         if(amt > 0 && wallets[player] >= amt) {
             const updates = {};
             updates[`rooms/${room}/wallets/${player}`] = wallets[player] - amt;
             updates[`rooms/${room}/wallets/${target}`] = wallets[target] + amt;
-            update(ref(db), updates);
-            push(ref(db, `rooms/${room}/history`), `${player} sent ${amt} to ${target}`);
+            await update(ref(db), updates);
+            await push(ref(db, `rooms/${room}/history`), `${player} sent ${amt}៛ to ${target}`);
         }
     }
 }
 
+// Chat UI Toggles
 document.getElementById("chatBtn").onclick = () => document.getElementById("chatModal").style.display = "flex";
 document.getElementById("closeChat").onclick = () => document.getElementById("chatModal").style.display = "none";
-document.getElementById("sendChat").onclick = () => {
-    const m = document.getElementById("chatInput").value;
-    if(m) { push(ref(db, `rooms/${room}/history`), `${player}: ${m}`); document.getElementById("chatInput").value = ""; }
+document.getElementById("sendBtn").onclick = () => {
+    const m = document.getElementById("msgInput").value;
+    if(m) { push(ref(db, `rooms/${room}/history`), `${player}: ${m}`); document.getElementById("msgInput").value = ""; }
 }
-// ... (Include your deal, reveal, reset functions here)
+// (Include existing Deal/Ready/Reveal/Reset functions here)
 </script>
 </body>
 </html>
