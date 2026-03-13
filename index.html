@@ -14,91 +14,32 @@ color:white;
 }
 
 #login{
-position:fixed;
-inset:0;
-background:black;
-display:flex;
-flex-direction:column;
-align-items:center;
-justify-content:center;
+position:fixed; inset:0; background:black;
+display:flex; flex-direction:column; align-items:center; justify-content:center;
 z-index:100;
 }
 
-input{
-padding:12px;
-margin:6px;
-width:220px;
-border-radius:8px;
-border:none;
-text-align:center;
-}
-
-button{
-padding:12px;
-border:none;
-border-radius:8px;
-font-weight:bold;
-cursor:pointer;
-}
+input{ padding:12px; margin:6px; width:220px; border-radius:8px; border:none; text-align:center; }
+button{ padding:12px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; }
 
 #table{
-height:60vh;
-position:relative;
-border:8px solid #3d2b1f;
-border-radius:40px;
-margin:10px;
-background:radial-gradient(circle,#1a5e37,#0a2114);
+height:55vh; position:relative; border:8px solid #3d2b1f; border-radius:40px;
+margin:10px; background:radial-gradient(circle,#1a5e37,#0a2114);
 }
 
-.player{
-position:absolute;
-transform:translate(-50%,-50%);
-text-align:center;
-}
+.player{ position:absolute; transform:translate(-50%,-50%); text-align:center; padding:10px; border-radius:10px; transition:0.3s; }
+.selected-player { background: rgba(255, 215, 0, 0.2); border: 1px solid gold; }
 
-.cards{
-display:grid;
-grid-template-columns:repeat(3,40px);
-grid-template-rows:repeat(2,55px);
-gap:4px;
-margin-top:5px;
-}
+.cards{ display:grid; grid-template-columns:repeat(3,40px); grid-template-rows:repeat(2,55px); gap:4px; margin-top:5px; }
+.cards img{ width:40px; height:55px; border-radius:4px; }
+.selected-card { outline: 3px solid gold; transform: scale(1.1); }
 
-.cards img{
-width:40px;
-height:55px;
-border-radius:4px;
-transition: transform 0.2s;
-}
-
-.selected-card {
-    outline: 3px solid gold;
-    transform: scale(1.1);
-}
-
-.controls{
-display:grid;
-grid-template-columns:repeat(3,1fr);
-gap:6px;
-padding:10px;
-}
-
-.topbar{
-display:flex;
-justify-content:space-between;
-padding:8px;
-background:black;
-}
+.controls{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; padding:10px; }
+.topbar{ display:flex; justify-content:space-between; padding:8px; background:black; }
 
 #history {
-    height: 60px;
-    background: rgba(0,0,0,0.4);
-    margin: 0 10px;
-    padding: 8px;
-    font-size: 13px;
-    overflow-y: auto;
-    border-radius: 8px;
-    border: 1px solid #1a5e37;
+    height: 80px; background: rgba(0,0,0,0.5); margin: 0 10px;
+    padding: 8px; font-size: 12px; overflow-y: auto; border-radius: 8px; border: 1px solid #333;
 }
 </style>
 </head>
@@ -126,7 +67,7 @@ background:black;
 <button id="dealBtn">Deal</button>
 <button id="readyBtn">Ready</button>
 <button id="revealBtn">Reveal</button>
-<button id="moneyBtn" style="background: #ffd700; color: #000;">Transfer</button>
+<button id="moneyBtn" style="background:gold; color:black">Transfer</button>
 <button id="resetBtn">Reset</button>
 <button id="chatBtn">Chat</button>
 </div>
@@ -146,16 +87,18 @@ projectId:"the-family-card-game"
 const app=initializeApp(firebaseConfig)
 const db=getDatabase(app)
 
-let room, player, selected=null, ready=false
+let room, player, selectedCard=null, selectedTarget=null, ready=false
 
 document.getElementById("startBtn").onclick = async () => {
     room = document.getElementById("room").value.trim().toLowerCase()
     player = document.getElementById("name").value.trim()
     let money = parseInt(document.getElementById("money").value) || 50000
     if(!room || !player) return alert("Enter name and room")
+
     const walletRef = ref(db, `rooms/${room}/wallets/${player}`)
     const snap = await get(walletRef)
     if(!snap.exists()) await set(walletRef, money)
+
     document.getElementById("login").style.display = "none"
     document.getElementById("game").style.display = "block"
     document.getElementById("info").innerText = `Room: ${room} | Player: ${player}`
@@ -173,14 +116,21 @@ function listen(){
         players.forEach((p, i) => {
             const angle = i * (360/players.length) * Math.PI/180
             const spot = document.createElement("div")
-            spot.className = "player"
+            spot.className = "player" + (selectedTarget === p ? " selected-player" : "")
             spot.style.left = (50+35*Math.cos(angle))+"%"
             spot.style.top = (50+35*Math.sin(angle))+"%"
 
+            // Click player to select for transfer
+            spot.onclick = () => {
+                if(p !== player) {
+                    selectedTarget = p;
+                    listen(); // Refresh highlight
+                }
+            }
+
             const isReady = data.readyStatus?.[p]
             const badge = document.createElement("div")
-            // FIXED: Tick symbol color logic
-            badge.innerHTML = `${p}${isReady ? ' <span style="color:#00FF00; font-weight:bold;">✓</span>' : ""}<br>${wallets[p]}៛`
+            badge.innerHTML = `${p}${isReady ? ' <span style="color:#00ff00;font-weight:bold;">✓</span>' : ""}<br>${wallets[p]}៛`
             spot.appendChild(badge)
 
             const cardDiv = document.createElement("div")
@@ -192,14 +142,15 @@ function listen(){
                     img.src = (c.faceUp || p === player) ? cardImg(c.val) : "https://deckofcardsapi.com/static/img/back.png"
                     
                     if(p === player && !isReady){
-                        if(selected === idx) img.className = "selected-card"
-                        img.onclick = () => {
-                            if(selected === null) {
-                                selected = idx
-                                listen() // Re-render to show selection
+                        if(selectedCard === idx) img.className = "selected-card"
+                        img.onclick = (e) => {
+                            e.stopPropagation();
+                            if(selectedCard === null) {
+                                selectedCard = idx;
+                                listen();
                             } else {
-                                swap(selected, idx)
-                                selected = null
+                                swap(selectedCard, idx);
+                                selectedCard = null;
                             }
                         }
                     }
@@ -210,54 +161,47 @@ function listen(){
             table.appendChild(spot)
         })
 
-        // FIXED: History display logic
-        const hist = document.getElementById("history")
-        hist.innerHTML = ""
+        // History/Chat Display
+        const histBox = document.getElementById("history")
+        histBox.innerHTML = ""
         if(data.history){
-            const logs = Object.values(data.history)
-            logs.slice(-5).reverse().forEach(m => {
-                const d = document.createElement("div")
-                d.style.borderBottom = "1px solid #222"
-                d.innerText = "💸 " + m
-                hist.appendChild(d)
+            Object.values(data.history).reverse().forEach(msg => {
+                const item = document.createElement("div")
+                item.style.padding = "2px 0"
+                item.innerText = "💬 " + msg
+                histBox.appendChild(item)
             })
         }
     })
 }
 
-// FIXED: Improved Swap Logic
 async function swap(a, b){
-    if(a === b) return;
     const pRef = ref(db, `rooms/${room}/players/${player}`)
     const snap = await get(pRef)
     let cards = snap.val()
     if(!cards) return;
-    const temp = cards[a];
-    cards[a] = cards[b];
-    cards[b] = temp;
+    [cards[a], cards[b]] = [cards[b], cards[a]]
     await set(pRef, cards)
 }
 
-// FIXED: Complete Money Transfer with validation and History
 document.getElementById("moneyBtn").onclick = async () => {
-    const target = prompt("Target Player Name:")
-    if(!target) return
-    const amt = parseInt(prompt("Amount to send:"))
+    if(!selectedTarget) return alert("Click a player on the table first!")
+    const amt = parseInt(prompt(`Send to ${selectedTarget}. Amount:`))
     if(!amt || amt <= 0) return
 
     const roomRef = ref(db, `rooms/${room}`)
     const snap = await get(roomRef)
     const data = snap.val()
 
-    if(!data.wallets || !data.wallets[target]) return alert("Player not found!")
-    if(data.wallets[player] < amt) return alert("Insufficient balance!")
+    if(data.wallets[player] < amt) return alert("Not enough money!")
 
     const updates = {}
     updates[`rooms/${room}/wallets/${player}`] = data.wallets[player] - amt
-    updates[`rooms/${room}/wallets/${target}`] = data.wallets[target] + amt
+    updates[`rooms/${room}/wallets/${selectedTarget}`] = data.wallets[selectedTarget] + amt
     
     await update(ref(db), updates)
-    await push(ref(db, `rooms/${room}/history`), `${player} sent ${amt}៛ to ${target}`)
+    await push(ref(db, `rooms/${room}/history`), `${player} sent ${amt}៛ to ${selectedTarget}`)
+    selectedTarget = null; // Clear selection
 }
 
 document.getElementById("dealBtn").onclick = () => {
