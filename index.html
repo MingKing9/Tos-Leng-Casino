@@ -6,7 +6,6 @@
 <title>Tos Leng</title>
 
 <style>
-
 body{
 margin:0;
 font-family:-apple-system;
@@ -82,50 +81,6 @@ justify-content:space-between;
 padding:8px;
 background:black;
 }
-
-#chatWindow{
-position:fixed;
-bottom:0;
-left:0;
-right:0;
-height:40vh;
-background:black;
-display:none;
-flex-direction:column;
-}
-
-#chatMessages{
-flex:1;
-overflow:auto;
-padding:10px;
-font-size:14px;
-}
-
-#chatInput{
-display:flex;
-}
-
-#chatInput input{
-flex:1;
-margin:0;
-}
-
-#transferBox{
-display:none;
-position:fixed;
-inset:0;
-background:rgba(0,0,0,.8);
-align-items:center;
-justify-content:center;
-}
-
-.transferUI{
-background:white;
-color:black;
-padding:20px;
-border-radius:10px;
-}
-
 </style>
 </head>
 
@@ -142,7 +97,6 @@ border-radius:10px;
 <button id="startBtn">START</button>
 
 </div>
-
 
 <div id="game" style="display:none">
 
@@ -165,44 +119,13 @@ border-radius:10px;
 
 </div>
 
-</div>
-
-
-<div id="chatWindow">
-
-<div id="chatMessages"></div>
-
-<div id="chatInput">
-<input id="chatText">
-<button id="sendChat">Send</button>
+<div id="chatPanel" style="display:none; position:fixed; bottom:0; right:0; width:250px; height:300px; background:#111; color:white; overflow-y:auto; border:2px solid gold; padding:5px;">
+<h4>Chat</h4>
+<div id="chatMsgs" style="font-size:13px;"></div>
+<input id="chatInput" style="width:100%; padding:5px;" placeholder="Type..." onkeypress="if(event.key==='Enter') sendChat()">
 </div>
 
 </div>
-
-
-<div id="transferBox">
-
-<div class="transferUI">
-
-<h3>Transfer Money</h3>
-
-<select id="transferPlayer"></select>
-
-<br><br>
-
-<input id="transferAmount" type="number" placeholder="Amount">
-
-<br><br>
-
-<button id="sendMoney">Send</button>
-
-<button onclick="document.getElementById('transferBox').style.display='none'">Cancel</button>
-
-</div>
-
-</div>
-
-
 <script type="module">
 
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"
@@ -222,13 +145,12 @@ let room
 let player
 let selected=null
 let ready=false
+let lang="en"  // can extend to select later
 
 const startBtn=document.getElementById("startBtn")
-
 startBtn.addEventListener("click",join)
 
 async function join(){
-
 room=document.getElementById("room").value.trim().toLowerCase()
 player=document.getElementById("name").value.trim()
 let money=parseInt(document.getElementById("money").value)||50000
@@ -237,283 +159,137 @@ if(!room||!player) return alert("Enter name and room")
 
 const walletRef=ref(db,`rooms/${room}/wallets/${player}`)
 const snap=await get(walletRef)
-
 if(!snap.exists()) await set(walletRef,money)
 
 document.getElementById("login").style.display="none"
 document.getElementById("game").style.display="block"
-
 document.getElementById("info").innerText=`Room: ${room} | Player: ${player}`
 
 listen()
-
+listenChat()
 }
-  function listen(){
 
+// --- Listen to table changes ---
+function listen(){
 onValue(ref(db,`rooms/${room}`),snap=>{
-
 const data=snap.val()||{}
 const wallets=data.wallets||{}
 const players=Object.keys(wallets)
-
 const table=document.getElementById("table")
-
 table.innerHTML=""
 
 players.forEach((p,i)=>{
-
 const angle=i*(360/players.length)*Math.PI/180
-
 const spot=document.createElement("div")
 spot.className="player"
-
 spot.style.left=(50+35*Math.cos(angle))+"%"
 spot.style.top=(50+35*Math.sin(angle))+"%"
 
 const badge=document.createElement("div")
-
 badge.innerHTML=`${p}${data.readyStatus?.[p]?" ✓":""}<br>${wallets[p]}៛`
-
 spot.appendChild(badge)
 
 const cardDiv=document.createElement("div")
 cardDiv.className="cards"
-
 if(data.players?.[p]){
-
 data.players[p].forEach((c,i)=>{
-
 const img=document.createElement("img")
-
 img.src=(c.faceUp||p===player)?cardImg(c.val):"https://deckofcardsapi.com/static/img/back.png"
-
 if(p===player&&!data.readyStatus?.[p]&&!c.faceUp){
-
-img.onclick=()=>{
-
-if(selected===null) selected=i
-else swap(selected,i)
-
+img.onclick=()=>{if(selected===null) selected=i; else swap(selected,i)}
 }
-
-}
-
 cardDiv.appendChild(img)
-
 })
-
 }
-
 spot.appendChild(cardDiv)
-
 table.appendChild(spot)
-
+})
 })
 
+// --- Listen to transfers and show in chat ---
+onValue(ref(db,`rooms/${room}/transfers`),snap=>{
+const transfers=snap.val()
+if(!transfers) return
+const chatMsgs=document.getElementById("chatMsgs")
+chatMsgs.innerHTML=""
+Object.values(transfers).sort((a,b)=>a.t-b.t).forEach(tr=>{
+const msg=document.createElement("div")
+msg.innerText=`${tr.from} → ${tr.to}: ${tr.amount}៛`
+chatMsgs.appendChild(msg)
 })
-
+})
 }
 
+// --- Swap cards ---
 async function swap(a,b){
-
 const pRef=ref(db,`rooms/${room}/players/${player}`)
 const snap=await get(pRef)
-
 let c=snap.val()
-
 [c[a],c[b]]=[c[b],c[a]]
-
 await set(pRef,c)
-
 selected=null
-
 }
 
+// --- Deal ---
 document.getElementById("dealBtn").onclick=deal
-
 function deal(){
-
-const suits=["♠","♥","♦","♣"]
-const vals=["A","2","3","4","5","6","7","8","9","10","J","Q","K"]
-
+const suits=["♠","♥","♦","♣"], vals=["A","2","3","4","5","6","7","8","9","10","J","Q","K"]
 let deck=[]
-
 suits.forEach(s=>vals.forEach(v=>deck.push(v+s)))
-
 deck.sort(()=>Math.random()-0.5)
-
 let cards=deck.slice(0,6).map(v=>({val:v,faceUp:false}))
-
 set(ref(db,`rooms/${room}/players/${player}`),cards)
 set(ref(db,`rooms/${room}/readyStatus/${player}`),false)
-
 }
 
+// --- Ready / Unready (single button) ---
 document.getElementById("readyBtn").onclick=()=>{
-
 ready=!ready
-
 set(ref(db,`rooms/${room}/readyStatus/${player}`),ready)
-
-document.getElementById("readyBtn").innerText=ready?"Unready":"Ready"
-
+document.getElementById("readyBtn").innerText=ready?(lang==="kh"?"មិនទាន់រួចរាល់":"Unready"):(lang==="kh"?"រួចរាល់":"Ready")
 }
 
+// --- Reveal ---
 document.getElementById("revealBtn").onclick=()=>{
-
 get(ref(db,`rooms/${room}/players`)).then(snap=>{
-
 const d=snap.val()
-
 let up={}
-
-for(let p in d){
-
-d[p].forEach((c,i)=>{
-
-up[`rooms/${room}/players/${p}/${i}/faceUp`]=true
-
-})
-
-}
-
+for(let p in d) d[p].forEach((c,i)=>{up[`rooms/${room}/players/${p}/${i}/faceUp`]=true})
 update(ref(db),up)
-
 })
-
 }
 
+// --- Reset ---
 document.getElementById("resetBtn").onclick=()=>{
-
 set(ref(db,`rooms/${room}/players`),null)
 set(ref(db,`rooms/${room}/readyStatus`),null)
-
 }
 
-document.getElementById("logoutBtn").onclick=()=>{
-
-remove(ref(db,`rooms/${room}/players/${player}`))
-remove(ref(db,`rooms/${room}/readyStatus/${player}`))
-
+// --- Logout ---
+document.getElementById("logoutBtn").onclick=async ()=>{
+await remove(ref(db,`rooms/${room}/players/${player}`))
+await remove(ref(db,`rooms/${room}/readyStatus/${player}`))
 document.getElementById("game").style.display="none"
 document.getElementById("login").style.display="flex"
-
 }
 
+// --- Card image helper ---
 function cardImg(v){
-
 const suitMap={"♠":"S","♥":"H","♦":"D","♣":"C"}
-
 let val=v.replace(/[♠♥♦♣]/g,'')
-
 if(val==="10") val="0"
-
 return `https://deckofcardsapi.com/static/img/${val}${suitMap[v.slice(-1)]}.png`
-
 }
 
-
-
-/* CHAT */
-
-document.getElementById("chatBtn").onclick=()=>{
-
-const w=document.getElementById("chatWindow")
-
-w.style.display=w.style.display==="flex"?"none":"flex"
-
-}
-
-document.getElementById("sendChat").onclick=()=>{
-
-const txt=document.getElementById("chatText").value
-
-if(!txt) return
-
-push(ref(db,`rooms/${room}/chats`),{
-
-u:player,
-m:txt,
-t:Date.now()
-
-})
-
-document.getElementById("chatText").value=""
-
-}
-
-onValue(ref(db,`rooms/${room}/chats`),snap=>{
-
-const box=document.getElementById("chatMessages")
-
-box.innerHTML=""
-
-snap.forEach(s=>{
-
-const c=s.val()
-
-box.innerHTML+=`<div>${c.u}: ${c.m}</div>`
-
-})
-
-box.scrollTop=box.scrollHeight
-
-})
-
-
-/* MONEY TRANSFER */
-
-document.getElementById("moneyBtn").onclick=async()=>{
-
-document.getElementById("transferBox").style.display="flex"
-
-const list=document.getElementById("transferPlayer")
-
-list.innerHTML=""
-
-const snap=await get(ref(db,`rooms/${room}/wallets`))
-const players=snap.val()||{}
-
-Object.keys(players).forEach(p=>{
-
-if(p!==player){
-
-const op=document.createElement("option")
-op.value=p
-op.text=p
-
-list.appendChild(op)
-
-}
-
-})
-
-}
-
-document.getElementById("sendMoney").onclick=async()=>{
-
-const to=document.getElementById("transferPlayer").value
-const amt=parseInt(document.getElementById("transferAmount").value)
-
-if(!to||!amt||amt<=0) return alert("Invalid amount")
-
-const fromRef=ref(db,`rooms/${room}/wallets/${player}`)
-const toRef=ref(db,`rooms/${room}/wallets/${to}`)
-
-await runTransaction(fromRef,val=>val>=amt?val-amt:null)
-await runTransaction(toRef,val=>val?val+amt:amt)
-
-push(ref(db,`rooms/${room}/chats`),{
-u:"SYSTEM",
-m:`${player} transferred ${amt}៛ to ${to}`,
-t:Date.now()
-})
-
-document.getElementById("transferBox").style.display="none"
-
+// --- Chat ---
+document.getElementById("chatBtn").onclick=()=>{document.getElementById("chatPanel").style.display="block"}
+window.sendChat=()=>{
+const inp=document.getElementById("chatInput")
+if(!inp.value.trim()) return
+push(ref(db,`rooms/${room}/chats`),{u:player,m:inp.value.trim(),t:Date.now()})
+inp.value=""
 }
 
 </script>
-
 </body>
 </html>
