@@ -316,10 +316,27 @@
 
     window.confirmTransfer = () => {
         const to = document.getElementById("transfer-to").value;
-        const amt = parseInt(document.getElementById("transfer-amount").value);
-        if(!to || !amt) return;
-        runTransaction(ref(db, `rooms/${room}/wallets/${player}`), c => (c || 0) - amt);
-        runTransaction(ref(db, `rooms/${room}/wallets/${to}`), c => (c || 0) + amt);
+        const amtInput = document.getElementById("transfer-amount");
+        const amt = parseInt(amtInput.value);
+        
+        if (!to || !amt || amt <= 0) return alert("Invalid amount");
+
+        // 1. Perform the money transactions
+        runTransaction(ref(db, `rooms/${room}/wallets/${player}`), (c) => {
+            if ((c || 0) < amt) return; // Prevent if not enough money
+            return (c || 0) - amt;
+        });
+        runTransaction(ref(db, `rooms/${room}/wallets/${to}`), (c) => (c || 0) + amt);
+
+        // 2. Add the transaction to chat history
+        push(ref(db, `rooms/${room}/chats`), { 
+            u: "SYSTEM", 
+            m: `${player} transferred ${amt.toLocaleString()} to ${to}`, 
+            t: Date.now() 
+        });
+
+        // 3. Cleanup
+        amtInput.value = "";
         document.getElementById("transfer-modal").style.display = "none";
     };
 
