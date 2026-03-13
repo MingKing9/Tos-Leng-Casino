@@ -185,27 +185,34 @@
     };
 
 window.join = function() {
-        room = document.getElementById("roomInput").value.trim().toLowerCase();
-        player = document.getElementById("nameInput").value.trim();
-        lang = document.getElementById("langSelect").value;
-        const money = parseInt(document.getElementById("moneyInput").value) || 50000;
-        
-        if(!room || !player) return alert("Please input name/room");
+    room = document.getElementById("roomInput").value.trim().toLowerCase();
+    player = document.getElementById("nameInput").value.trim();
+    lang = document.getElementById("langSelect").value;
+    const money = parseInt(document.getElementById("moneyInput").value) || 50000;
+    
+    if(!room || !player) {
+        alert("Please input name and room");
+        return;
+    }
 
-        // Set the player's wallet
-        set(ref(db, `rooms/${room}/wallets/${player}`), money);
-        
-        // NEW: Set status to online and tell Firebase to set it to offline on disconnect
-        const statusRef = ref(db, `rooms/${room}/onlineStatus/${player}`);
-        set(statusRef, "online");
-        onDisconnect(statusRef).set("offline");
+    // Reference to status
+    const statusRef = ref(db, `rooms/${room}/onlineStatus/${player}`);
 
-        document.getElementById("login-screen").style.display = "none";
-        
-        applyTranslations();
-        listen();
-        listenChat();
-    };
+    // Set player data
+    set(ref(db, `rooms/${room}/wallets/${player}`), money);
+    set(statusRef, "online");
+
+    // This tells Firebase: "When I leave, set status to offline"
+    onDisconnect(statusRef).set("offline");
+
+    // Hide login
+    document.getElementById("login-screen").style.display = "none";
+    
+    // Start listening
+    applyTranslations();
+    listen();
+    listenChat();
+};
 
     function applyTranslations() {
         const d = dictionary[lang];
