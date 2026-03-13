@@ -2,17 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Tos Leng</title>
 
 <style>
-:root { --gold:#d4af37; --felt:#1a5e37; --wood:#3d2b1f; --red:#e74c3c; --safe-bottom:env(safe-area-inset-bottom); }
-
-*{
-box-sizing:border-box;
--webkit-tap-highlight-color:transparent;
-font-family:-apple-system,sans-serif;
-}
+:root { --gold:#d4af37; --felt:#1a5e37; --wood:#3d2b1f; }
 
 body,html{
 margin:0;
@@ -21,49 +15,36 @@ width:100%;
 height:100%;
 overflow:hidden;
 background:#000;
+font-family:Arial;
 }
 
 #room-info-bar{
 position:fixed;
 top:0;
 width:100%;
-height:44px;
-padding-top:env(safe-area-inset-top);
-background:rgba(0,0,0,0.9);
+height:40px;
+background:#000;
+color:var(--gold);
 display:flex;
 justify-content:space-between;
 align-items:center;
-padding:0 15px;
+padding:0 10px;
 border-bottom:1px solid #444;
-z-index:1000;
-color:var(--gold);
-font-size:13px;
-}
-
-#btn-leave{
-color:var(--red);
-font-weight:bold;
-cursor:pointer;
-border:1px solid var(--red);
-padding:2px 8px;
-border-radius:5px;
 }
 
 #game-wrapper{
 display:flex;
 flex-direction:column;
-height:100dvh;
-width:100vw;
-background:radial-gradient(circle,var(--felt) 0%,#0a2114 100%);
+height:100vh;
+background:radial-gradient(circle,var(--felt),#0a2114);
 }
 
 #poker-table{
 flex:1;
-position:relative;
-margin:60px 10px 10px 10px;
+margin:50px 10px 10px 10px;
 border:8px solid var(--wood);
 border-radius:50px;
-box-shadow:inset 0 0 60px rgba(0,0,0,0.8);
+position:relative;
 }
 
 .player-spot{
@@ -72,18 +53,16 @@ transform:translate(-50%,-50%);
 display:flex;
 flex-direction:column;
 align-items:center;
-width:110px;
 }
 
 .player-badge{
-background:rgba(0,0,0,0.85);
+background:rgba(0,0,0,0.8);
+color:white;
 padding:5px;
 border-radius:10px;
 border:1px solid var(--gold);
-font-size:10px;
-color:#fff;
+font-size:11px;
 text-align:center;
-width:100%;
 }
 
 .card-row{
@@ -105,22 +84,20 @@ background:white;
 background:#111;
 border-top:1px solid #333;
 display:grid;
-grid-template-columns:repeat(5,1fr);
-gap:6px;
-padding:10px 10px calc(var(--safe-bottom)+10px);
+grid-template-columns:1fr 1fr 1fr;
+gap:8px;
+padding:10px;
 }
 
 button{
-padding:15px 0;
+padding:10px;
 border:none;
 border-radius:10px;
 font-weight:bold;
-font-size:9px;
 color:white;
-cursor:pointer;
 }
 
-.btn-gold{background:var(--gold);color:#000;}
+.btn-gold{background:var(--gold);color:black;}
 .btn-blue{background:#2980b9;}
 .btn-green{background:#27ae60;}
 .btn-red{background:#c0392b;}
@@ -128,18 +105,18 @@ cursor:pointer;
 #login-screen{
 position:fixed;
 inset:0;
-background:#000;
-z-index:9999;
+background:black;
 display:flex;
 flex-direction:column;
 align-items:center;
 justify-content:center;
+z-index:9999;
 }
 
 .login-input{
 width:85%;
 max-width:300px;
-padding:14px;
+padding:12px;
 margin-bottom:10px;
 border-radius:10px;
 border:1px solid var(--gold);
@@ -147,24 +124,32 @@ background:#111;
 color:white;
 text-align:center;
 }
+
 </style>
 </head>
 
 <body>
 
 <div id="login-screen">
-<h1 style="color:var(--gold)">TOS LENG</h1>
 
-<input id="roomInput" class="login-input" placeholder="Room Name">
-<input id="nameInput" class="login-input" placeholder="Your Name">
+<h2 style="color:var(--gold)">TOS LENG</h2>
+
+<input id="roomInput" class="login-input" placeholder="Room">
+
+<input id="nameInput" class="login-input" placeholder="Name">
+
 <input id="moneyInput" class="login-input" type="number" value="50000">
 
-<button onclick="join()" class="btn-gold" style="width:85%;max-width:300px;font-size:16px;">START</button>
+<button onclick="join()" class="btn-gold login-input">START</button>
+
 </div>
 
 <div id="room-info-bar">
-<span id="display-room">TABLE: -</span>
-<span id="btn-leave" onclick="logout()">LEAVE</span>
+
+<span id="display-room">Room</span>
+
+<span id="display-name">Player</span>
+
 </div>
 
 <div id="game-wrapper">
@@ -173,11 +158,17 @@ text-align:center;
 
 <div class="controls-bar">
 
-<button class="btn-gold" onclick="openTransfer()">MONEY</button>
-<button class="btn-gold">CHAT</button>
-<button id="dealBtn" class="btn-blue" onclick="deal()">DEAL</button>
-<button class="btn-gold" style="background:#d35400" onclick="reveal()">REVEAL</button>
-<button class="btn-red" onclick="resetGame()">RESET</button>
+<button class="btn-gold" onclick="openTransfer()">Money</button>
+
+<button id="dealBtn" class="btn-blue" onclick="deal()">Deal</button>
+
+<button id="readyBtn" class="btn-green" onclick="toggleReady(true)">Ready</button>
+
+<button id="notReadyBtn" class="btn-red" onclick="toggleReady(false)">Unready</button>
+
+<button class="btn-gold" onclick="reveal()">Reveal</button>
+
+<button class="btn-red" onclick="resetGame()">Reset</button>
 
 </div>
 
@@ -186,103 +177,81 @@ text-align:center;
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getDatabase, ref, set, get, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import { getDatabase, ref, set, update, onValue, get, push, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-const app = initializeApp({
+const firebaseConfig={
 apiKey:"AIzaSyBjsVUxlNjGUnYioHOlKmk1wEMoVTSVxLw",
-databaseURL:"https://the-family-card-game-default-rtdb.asia-southeast1.firebasedatabase.app"
-});
+authDomain:"the-family-card-game.firebaseapp.com",
+databaseURL:"https://the-family-card-game-default-rtdb.asia-southeast1.firebasedatabase.app",
+projectId:"the-family-card-game"
+};
 
-const db = getDatabase(app);
+const app=initializeApp(firebaseConfig);
+const db=getDatabase(app);
 
-let room;
-let player;
+let room,player;
 
-function cardCode(v){
-const map={'♠':'S','♥':'H','♦':'D','♣':'C'};
-return v.replace(/[♠♥♦♣]/g,'').replace('10','0')+map[v.slice(-1)];
-}
-
-window.join = async () => {
+window.join=async function(){
 
 room=document.getElementById("roomInput").value.trim().toLowerCase();
 player=document.getElementById("nameInput").value.trim();
-const startMoney=parseInt(document.getElementById("moneyInput").value)||50000;
+let money=parseInt(document.getElementById("moneyInput").value)||50000;
 
-if(!room || !player) return alert("Enter Name & Room");
+if(!room||!player) return alert("Enter room and name");
 
-const moneyRef = ref(db,`rooms/${room}/money/${player}`);
-const snap = await get(moneyRef);
+const walletRef=ref(db,`rooms/${room}/wallets/${player}`);
+const snap=await get(walletRef);
 
 if(!snap.exists()){
-await set(moneyRef,startMoney);
+await set(walletRef,money);
 }
 
-await set(ref(db,`rooms/${room}/players/${player}`),[]);
-
-document.getElementById("display-room").innerText="TABLE: "+room;
 document.getElementById("login-screen").style.display="none";
 
-listen();
-};
+document.getElementById("display-room").innerText="Room: "+room;
+document.getElementById("display-name").innerText="Player: "+player;
 
-window.logout = async () => {
-await remove(ref(db,`rooms/${room}/players/${player}`));
-location.reload();
-};
+listen();
+
+}
 
 function listen(){
 
 onValue(ref(db,`rooms/${room}`),snap=>{
 
 const data=snap.val()||{};
-const players=data.players||{};
-const money=data.money||{};
-
 const table=document.getElementById("poker-table");
 table.innerHTML="";
 
-Object.keys(players).forEach((p,i)=>{
+const wallets=data.wallets||{};
+const players=Object.keys(wallets);
+
+players.forEach((p,i)=>{
+
+const angle=(i*(360/players.length))*Math.PI/180;
 
 const spot=document.createElement("div");
 spot.className="player-spot";
 
-spot.style.left=(20+(i*20))+"%";
-spot.style.top="50%";
+spot.style.left=(50+35*Math.cos(angle))+"%";
+spot.style.top=(50+35*Math.sin(angle))+"%";
 
 const badge=document.createElement("div");
 badge.className="player-badge";
-badge.innerText=p+" | "+(money[p]||0);
+
+badge.innerHTML=p+"<br>"+(wallets[p]||0)+"៛";
 
 spot.appendChild(badge);
 
-const cardsDiv=document.createElement("div");
-cardsDiv.className="card-row";
-
-(players[p]||[]).forEach(card=>{
-
-const img=document.createElement("img");
-img.className="card-img";
-
-if(card.faceUp){
-img.src=`https://deckofcardsapi.com/static/img/${cardCode(card.val)}.png`;
-}else{
-img.src="https://deckofcardsapi.com/static/img/back.png";
-}
-
-cardsDiv.appendChild(img);
-
-});
-
-spot.appendChild(cardsDiv);
 table.appendChild(spot);
 
 });
 
 });
+
 }
 
-window.deal = async () => {
+window.deal=function(){
 
 const suits=["♠","♥","♦","♣"];
 const vals=["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
@@ -290,62 +259,67 @@ const vals=["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
 let deck=[];
 suits.forEach(s=>vals.forEach(v=>deck.push(v+s)));
 
-deck.sort(()=>Math.random()-0.5);
+deck=deck.sort(()=>Math.random()-0.5);
 
-const snap=await get(ref(db,`rooms/${room}/players`));
+const cards=deck.slice(0,6).map(v=>({val:v,faceUp:false}));
 
-let updates={};
+set(ref(db,`rooms/${room}/players/${player}`),cards);
 
-snap.forEach(child=>{
-
-let cards=[];
-
-for(let i=0;i<6;i++){
-cards.push({val:deck.pop(),faceUp:false});
 }
 
-updates[`rooms/${room}/players/${child.key}`]=cards;
+window.reveal=function(){
+
+get(ref(db,`rooms/${room}/players`)).then(snap=>{
+
+let d=snap.val();
+if(!d)return;
+
+let up={};
+
+for(let p in d){
+d[p].forEach((c,i)=>{
+up[`rooms/${room}/players/${p}/${i}/faceUp`]=true;
+});
+}
+
+update(ref(db),up);
 
 });
 
-await update(ref(db),updates);
-};
+}
 
-window.reveal = async () => {
+window.resetGame=function(){
 
-const snap=await get(ref(db,`rooms/${room}/players`));
+set(ref(db,`rooms/${room}/players`),null);
+set(ref(db,`rooms/${room}/readyStatus`),null);
 
-let updates={};
+}
 
-snap.forEach(child=>{
+window.toggleReady=function(s){
 
-let cards=child.val();
+set(ref(db,`rooms/${room}/readyStatus/${player}`),s);
 
-cards=cards.map(c=>({val:c.val,faceUp:true}));
+}
 
-updates[`rooms/${room}/players/${child.key}`]=cards;
+window.openTransfer=function(){
 
+const to=prompt("Send to:");
+const amt=parseInt(prompt("Amount"));
+
+if(!to||!amt) return;
+
+runTransaction(ref(db,`rooms/${room}/wallets/${player}`),c=>(c||0)-amt);
+
+runTransaction(ref(db,`rooms/${room}/wallets/${to}`),c=>(c||0)+amt);
+
+push(ref(db,`rooms/${room}/history`),{
+from:player,
+to:to,
+amount:amt,
+time:Date.now()
 });
 
-await update(ref(db),updates);
-};
-
-window.resetGame = async () => {
-
-const snap=await get(ref(db,`rooms/${room}/players`));
-
-let updates={};
-
-snap.forEach(child=>{
-updates[`rooms/${room}/players/${child.key}`]=[];
-});
-
-await update(ref(db),updates);
-};
-
-window.openTransfer = ()=>{
-alert("Money transfer system placeholder");
-};
+}
 
 </script>
 
