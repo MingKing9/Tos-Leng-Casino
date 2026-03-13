@@ -179,7 +179,7 @@
     let isChatOpen = false;
 
     const dictionary = {
-        kh: { start: "ចូលលេង", table: "តុ", player: "អ្នកលេង", money: "ប្រាក់", chat: "ឆាត", deal: "ចែកបៀ", ready: "រួចរាល់", unready: "មិនទាន់រួចរាល់", reveal: "បើកបៀ", reset: "លេងថ្មី", trans: "ផ្ទេរប្រាក់", send: "បញ្ជូន", cancel: "បោះបង់", chatT: "ការពិភាក្សា" },
+        kh: { start: "ចូលលេង", table: "តុ", player: "អ្នកលេង", money: "ប្រាក់", chat: "ឆាត", deal: "ចែកបៀ", ready: "រួចរាល់", unready: "មិនទាន់រួចរាល់", reveal: "បើកបៀ", reset: "លេងម្តងទៀត", trans: "ផ្ទេរប្រាក់", send: "បញ្ជូន", cancel: "បោះបង់", chatT: "ការពិភាក្សា" },
         en: { start: "START", table: "TABLE", player: "PLAYER", money: "MONEY", chat: "CHAT", deal: "DEAL", ready: "READY", unready: "UNREADY", reveal: "REVEAL", reset: "RESET", trans: "TRANSFER", send: "SEND", cancel: "CANCEL", chatT: "CHAT" },
         cn: { start: "开始", table: "桌号", player: "玩家", money: "钱包", chat: "聊天", deal: "发牌", ready: "准备", unready: "未准备", reveal: "开牌", reset: "重置", trans: "转账", send: "发送", cancel: "取消", chatT: "聊天" }
     };
@@ -284,7 +284,7 @@
         inp.value = "";
     };
 
-   function listenChat() {
+function listenChat() {
         onValue(ref(db, `rooms/${room}/chats`), snap => {
             const area = document.getElementById("chat-msgs");
             area.innerHTML = "";
@@ -294,13 +294,12 @@
                     let d = document.createElement("div");
                     d.style.marginBottom = "8px";
                     
-                    // Check if it's a system message or a regular user message
                     if (c.u === "SYSTEM") {
-                        d.innerHTML = `<span style="color:var(--gold); font-weight:bold;">SYSTEM: 💸</span> <span style="color:#fff;">${c.m}</span>`;
+                        // This displays "SYSTEM:" in gold, followed by your message with the emoji
+                        d.innerHTML = `<span style="color:var(--gold); font-weight:bold;">SYSTEM:</span> <span style="color:#fff;">${c.m}</span>`;
                     } else {
                         d.innerHTML = `<span style="color:var(--gold); font-weight:bold;">${c.u}:</span> <span style="color:#fff;">${c.m}</span>`;
                     }
-                    
                     area.appendChild(d);
                 });
                 if(!isChatOpen) document.getElementById("chat-dot").style.display = "block";
@@ -321,21 +320,26 @@
         });
     };
 
-   window.confirmTransfer = () => {
+window.confirmTransfer = () => {
         const to = document.getElementById("transfer-to").value;
-        const amt = parseInt(document.getElementById("transfer-amount").value);
-        if(!to || !amt) return;
+        const amtInput = document.getElementById("transfer-amount");
+        const amt = parseInt(amtInput.value);
+        
+        if(!to || !amt || isNaN(amt)) return;
 
+        // Perform the money transactions
         runTransaction(ref(db, `rooms/${room}/wallets/${player}`), c => (c || 0) - amt);
         runTransaction(ref(db, `rooms/${room}/wallets/${to}`), c => (c || 0) + amt);
 
-        // This line matches your desired screenshot format
+        // Push the transaction log to Firebase
         push(ref(db, `rooms/${room}/chats`), { 
             u: "SYSTEM", 
-            m: `${player} SENT ${amt.toLocaleString()}៛ TO ${to}`, 
+            m: `💸 ${player} SENT ${amt.toLocaleString()}៛ TO ${to}`, 
             t: Date.now() 
         });
 
+        // Close the modal and clear the input
+        amtInput.value = "";
         document.getElementById("transfer-modal").style.display = "none";
     };
 
