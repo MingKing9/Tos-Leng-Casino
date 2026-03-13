@@ -27,8 +27,17 @@ height:55vh; position:relative; border:8px solid #3d2b1f; border-radius:40px;
 margin:10px; background:radial-gradient(circle,#1a5e37,#0a2114);
 }
 
-.player{ position:absolute; transform:translate(-50%,-50%); text-align:center; padding:10px; border-radius:10px; transition:0.3s; }
-.selected-player { background: rgba(255, 215, 0, 0.2); border: 1px solid gold; }
+.player{ 
+    position:absolute; transform:translate(-50%,-50%); 
+    text-align:center; padding:10px; border-radius:15px; 
+    transition:0.3s; cursor: pointer;
+}
+
+/* Highlight the player you click on to send money to */
+.selected-target { 
+    background: rgba(255, 215, 0, 0.3); 
+    box-shadow: 0 0 15px gold;
+}
 
 .cards{ display:grid; grid-template-columns:repeat(3,40px); grid-template-rows:repeat(2,55px); gap:4px; margin-top:5px; }
 .cards img{ width:40px; height:55px; border-radius:4px; }
@@ -38,8 +47,9 @@ margin:10px; background:radial-gradient(circle,#1a5e37,#0a2114);
 .topbar{ display:flex; justify-content:space-between; padding:8px; background:black; }
 
 #history {
-    height: 80px; background: rgba(0,0,0,0.5); margin: 0 10px;
-    padding: 8px; font-size: 12px; overflow-y: auto; border-radius: 8px; border: 1px solid #333;
+    height: 90px; background: rgba(0,0,0,0.6); margin: 0 10px;
+    padding: 10px; font-size: 13px; overflow-y: auto; border-radius: 8px; 
+    border: 1px solid #1a5e37; color: #00ff00;
 }
 </style>
 </head>
@@ -67,7 +77,7 @@ margin:10px; background:radial-gradient(circle,#1a5e37,#0a2114);
 <button id="dealBtn">Deal</button>
 <button id="readyBtn">Ready</button>
 <button id="revealBtn">Reveal</button>
-<button id="moneyBtn" style="background:gold; color:black">Transfer</button>
+<button id="moneyBtn" style="background:gold; color:black">Send Money</button>
 <button id="resetBtn">Reset</button>
 <button id="chatBtn">Chat</button>
 </div>
@@ -116,21 +126,21 @@ function listen(){
         players.forEach((p, i) => {
             const angle = i * (360/players.length) * Math.PI/180
             const spot = document.createElement("div")
-            spot.className = "player" + (selectedTarget === p ? " selected-player" : "")
+            spot.className = "player" + (selectedTarget === p ? " selected-target" : "")
             spot.style.left = (50+35*Math.cos(angle))+"%"
             spot.style.top = (50+35*Math.sin(angle))+"%"
 
-            // Click player to select for transfer
+            // NO TYPING: Just click the player to select them
             spot.onclick = () => {
                 if(p !== player) {
                     selectedTarget = p;
-                    listen(); // Refresh highlight
+                    listen(); // Re-render to show selection glow
                 }
             }
 
             const isReady = data.readyStatus?.[p]
             const badge = document.createElement("div")
-            badge.innerHTML = `${p}${isReady ? ' <span style="color:#00ff00;font-weight:bold;">✓</span>' : ""}<br>${wallets[p]}៛`
+            badge.innerHTML = `<b>${p}</b>${isReady ? ' <span style="color:#00ff00; font-size:1.2em;">✓</span>' : ""}<br>${wallets[p]}៛`
             spot.appendChild(badge)
 
             const cardDiv = document.createElement("div")
@@ -144,7 +154,7 @@ function listen(){
                     if(p === player && !isReady){
                         if(selectedCard === idx) img.className = "selected-card"
                         img.onclick = (e) => {
-                            e.stopPropagation();
+                            e.stopPropagation(); // Don't trigger the player selection
                             if(selectedCard === null) {
                                 selectedCard = idx;
                                 listen();
@@ -161,14 +171,14 @@ function listen(){
             table.appendChild(spot)
         })
 
-        // History/Chat Display
+        // FIXED CHAT: Correctly reading history node
         const histBox = document.getElementById("history")
         histBox.innerHTML = ""
         if(data.history){
             Object.values(data.history).reverse().forEach(msg => {
                 const item = document.createElement("div")
-                item.style.padding = "2px 0"
-                item.innerText = "💬 " + msg
+                item.style.borderBottom = "1px solid #111"
+                item.innerText = "➤ " + msg
                 histBox.appendChild(item)
             })
         }
@@ -184,9 +194,11 @@ async function swap(a, b){
     await set(pRef, cards)
 }
 
+// FIXED MONEY: Uses the selectedTarget variable from the click
 document.getElementById("moneyBtn").onclick = async () => {
-    if(!selectedTarget) return alert("Click a player on the table first!")
-    const amt = parseInt(prompt(`Send to ${selectedTarget}. Amount:`))
+    if(!selectedTarget) return alert("Click on a player's name first!")
+    
+    const amt = parseInt(prompt(`Transfer to ${selectedTarget}. Amount:`))
     if(!amt || amt <= 0) return
 
     const roomRef = ref(db, `rooms/${room}`)
@@ -200,8 +212,10 @@ document.getElementById("moneyBtn").onclick = async () => {
     updates[`rooms/${room}/wallets/${selectedTarget}`] = data.wallets[selectedTarget] + amt
     
     await update(ref(db), updates)
+    // Send message to history/chat
     await push(ref(db, `rooms/${room}/history`), `${player} sent ${amt}៛ to ${selectedTarget}`)
-    selectedTarget = null; // Clear selection
+    
+    selectedTarget = null; // Clear selection after sending
 }
 
 document.getElementById("dealBtn").onclick = () => {
@@ -223,6 +237,7 @@ document.getElementById("readyBtn").onclick = () => {
 document.getElementById("revealBtn").onclick = () => {
     get(ref(db, `rooms/${room}/players`)).then(snap => {
         const d = snap.val(); let up = {}
+        if(!d) return;
         for(let p in d) d[p].forEach((c, i) => { up[`rooms/${room}/players/${p}/${i}/faceUp`] = true })
         update(ref(db), up)
     })
