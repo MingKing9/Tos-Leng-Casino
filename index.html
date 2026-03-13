@@ -184,7 +184,7 @@
         cn: { start: "开始", table: "桌号", player: "玩家", money: "钱包", chat: "聊天", deal: "发牌", ready: "准备", unready: "未准备", reveal: "开牌", reset: "重置", trans: "转账", send: "发送", cancel: "取消", chatT: "聊天" }
     };
 
-    window.join = function() {
+window.join = function() {
         room = document.getElementById("roomInput").value.trim().toLowerCase();
         player = document.getElementById("nameInput").value.trim();
         lang = document.getElementById("langSelect").value;
@@ -192,7 +192,14 @@
         
         if(!room || !player) return alert("Please input name/room");
 
+        // Set the player's wallet
         set(ref(db, `rooms/${room}/wallets/${player}`), money);
+        
+        // NEW: Set status to online and tell Firebase to set it to offline on disconnect
+        const statusRef = ref(db, `rooms/${room}/onlineStatus/${player}`);
+        set(statusRef, "online");
+        onDisconnect(statusRef).set("offline");
+
         document.getElementById("login-screen").style.display = "none";
         
         applyTranslations();
@@ -217,13 +224,14 @@
         document.getElementById("txt-chat-title").innerText = d.chatT;
     }
 
-    function listen() {
+  function listen() {
         onValue(ref(db, `rooms/${room}`), snap => {
             const data = snap.val() || {};
             const table = document.getElementById("poker-table");
             table.innerHTML = "";
             
             const wallets = data.wallets || {};
+            const status = data.onlineStatus || {}; // Get the status list
             const players = Object.keys(wallets);
             const myCards = (data.players && data.players[player]) ? data.players[player] : null;
             const amIReady = (data.readyStatus && data.readyStatus[player]);
@@ -233,6 +241,10 @@
             document.getElementById("notReadyBtn").style.display = amIReady ? "block" : "none";
 
             players.forEach((p, i) => {
+                // --- THE FILTER: Only draw players who are 'online' ---
+                if (status[p] !== "online") return; 
+                // -----------------------------------------------------
+
                 const isPReady = (data.readyStatus && data.readyStatus[p]);
                 const angle = (i * (360 / players.length)) * (Math.PI / 180);
                 const spot = document.createElement("div");
