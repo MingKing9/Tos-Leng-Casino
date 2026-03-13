@@ -4,91 +4,105 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tos Leng</title>
+
 <style>
+
 body{
-    margin:0;
-    font-family:-apple-system;
-    background:#0a2114;
-    color:white;
+margin:0;
+font-family:-apple-system;
+background:#0a2114;
+color:white;
 }
+
 #login{
-    position:fixed;
-    inset:0;
-    background:black;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
+position:fixed;
+inset:0;
+background:black;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
 }
+
 input{
-    padding:12px;
-    margin:6px;
-    width:220px;
-    border-radius:8px;
-    border:none;
-    text-align:center;
+padding:12px;
+margin:6px;
+width:220px;
+border-radius:8px;
+border:none;
+text-align:center;
 }
+
 button{
-    padding:12px;
-    border:none;
-    border-radius:8px;
-    font-weight:bold;
+padding:12px;
+border:none;
+border-radius:8px;
+font-weight:bold;
 }
+
 #table{
-    height:70vh;
-    position:relative;
-    border:8px solid #3d2b1f;
-    border-radius:40px;
-    margin:10px;
-    background:radial-gradient(circle,#1a5e37,#0a2114);
+height:70vh;
+position:relative;
+border:8px solid #3d2b1f;
+border-radius:40px;
+margin:10px;
+background:radial-gradient(circle,#1a5e37,#0a2114);
 }
+
 .player{
-    position:absolute;
-    transform:translate(-50%,-50%);
-    text-align:center;
+position:absolute;
+transform:translate(-50%,-50%);
+text-align:center;
 }
+
 .cards{
-    display:grid;
-    grid-template-columns:repeat(3,40px);
-    grid-template-rows:repeat(2,55px);
-    gap:4px;
-    margin-top:5px;
+display:grid;
+grid-template-columns:repeat(3,40px);
+grid-template-rows:repeat(2,55px);
+gap:4px;
+margin-top:5px;
 }
+
 .cards img{
-    width:40px;
-    height:55px;
-    border-radius:4px;
+width:40px;
+height:55px;
+border-radius:4px;
 }
+
 .controls{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:6px;
-    padding:10px;
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:6px;
+padding:10px;
 }
+
 .topbar{
-    display:flex;
-    justify-content:space-between;
-    padding:8px;
-    background:black;
+display:flex;
+justify-content:space-between;
+padding:8px;
+background:black;
 }
+
 </style>
 </head>
+
 <body>
 
 <div id="login">
+
 <h2 style="color:gold">TOS LENG</h2>
+
 <input id="room" placeholder="Room">
 <input id="name" placeholder="Name">
 <input id="money" type="number" value="50000">
-<select id="langSelect">
-  <option value="en">ENGLISH</option>
-  <option value="kh">ភាសាខ្មែរ</option>
-  <option value="cn">中文</option>
-</select>
+
 <button id="startBtn">START</button>
+
 </div>
 
+
 <div id="game" style="display:none">
+
 <div class="topbar">
 <span id="info"></span>
 <button id="logoutBtn">Logout</button>
@@ -97,18 +111,23 @@ button{
 <div id="table"></div>
 
 <div class="controls">
+
 <button id="dealBtn">Deal</button>
 <button id="readyBtn">Ready</button>
 <button id="revealBtn">Reveal</button>
+
 <button id="moneyBtn">Money</button>
 <button id="resetBtn">Reset</button>
 <button id="chatBtn">Chat</button>
+
 </div>
 
 </div>
+
 <script type="module">
+
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"
-import {getDatabase,ref,set,onValue,get,update,remove,runTransaction,push} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js"
+import {getDatabase,ref,set,onValue,get,update,remove,runTransaction} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js"
 
 const firebaseConfig={
 apiKey:"AIzaSyBjsVUxlNjGUnYioHOlKmk1wEMoVTSVxLw",
@@ -116,6 +135,7 @@ authDomain:"the-family-card-game.firebaseapp.com",
 databaseURL:"https://the-family-card-game-default-rtdb.asia-southeast1.firebasedatabase.app",
 projectId:"the-family-card-game"
 }
+
 const app=initializeApp(firebaseConfig)
 const db=getDatabase(app)
 
@@ -123,146 +143,198 @@ let room
 let player
 let selected=null
 let ready=false
-let lang="en"
 
 const startBtn=document.getElementById("startBtn")
-const readyBtn=document.getElementById("readyBtn")
+
 startBtn.addEventListener("click",join)
 
-const translations={
-en:{ready:"Ready", unready:"Unready", transferNotice:"transferred"},
-kh:{ready:"រួចរាល់", unready:"មិនទាន់រួចរាល់", transferNotice:"ផ្ទេរប្រាក់ទៅ"},
-cn:{ready:"准备", unready:"未准备", transferNotice:"转账给"}
-}
-
 async function join(){
-    room=document.getElementById("room").value.trim().toLowerCase()
-    player=document.getElementById("name").value.trim()
-    lang=document.getElementById("langSelect").value
-    let money=parseInt(document.getElementById("money").value)||50000
-    if(!room||!player) return alert("Enter name and room")
-    
-    const walletRef=ref(db,`rooms/${room}/wallets/${player}`)
-    const snap=await get(walletRef)
-    if(!snap.exists()) await set(walletRef,money)
 
-    document.getElementById("login").style.display="none"
-    document.getElementById("game").style.display="block"
-    document.getElementById("info").innerText=`Room: ${room} | Player: ${player}`
-    
-    // Translate Ready button
-    readyBtn.innerText=translations[lang].ready
+room=document.getElementById("room").value.trim().toLowerCase()
+player=document.getElementById("name").value.trim()
+let money=parseInt(document.getElementById("money").value)||50000
 
-    listen()
+if(!room||!player) return alert("Enter name and room")
+
+const walletRef=ref(db,`rooms/${room}/wallets/${player}`)
+const snap=await get(walletRef)
+
+if(!snap.exists()) await set(walletRef,money)
+
+document.getElementById("login").style.display="none"
+document.getElementById("game").style.display="block"
+
+document.getElementById("info").innerText=`Room: ${room} | Player: ${player}`
+
+listen()
+
 }
 
 function listen(){
-    onValue(ref(db,`rooms/${room}`),snap=>{
-        const data=snap.val()||{}
-        const wallets=data.wallets||{}
-        const players=Object.keys(wallets)
-        const table=document.getElementById("table")
-        table.innerHTML=""
-        players.forEach((p,i)=>{
-            const angle=i*(360/players.length)*Math.PI/180
-            const spot=document.createElement("div")
-            spot.className="player"
-            spot.style.left=(50+35*Math.cos(angle))+"%"
-            spot.style.top=(50+35*Math.sin(angle))+"%"
-            const badge=document.createElement("div")
-            badge.innerHTML=`${p}${data.readyStatus?.[p]?" ✓":""}<br>${wallets[p]}៛`
-            spot.appendChild(badge)
-            const cardDiv=document.createElement("div")
-            cardDiv.className="cards"
-            if(data.players?.[p]){
-                data.players[p].forEach((c,i)=>{
-                    const img=document.createElement("img")
-                    img.src=(c.faceUp||p===player)?cardImg(c.val):"https://deckofcardsapi.com/static/img/back.png"
-                    if(p===player&&!data.readyStatus?.[p]&&!c.faceUp){
-                        img.onclick=()=>{
-                            if(selected===null) selected=i
-                            else swap(selected,i)
-                        }
-                    }
-                    cardDiv.appendChild(img)
-                })
-            }
-            spot.appendChild(cardDiv)
-            table.appendChild(spot)
-        })
-    })
+
+onValue(ref(db,`rooms/${room}`),snap=>{
+
+const data=snap.val()||{}
+const wallets=data.wallets||{}
+const players=Object.keys(wallets)
+
+const table=document.getElementById("table")
+
+table.innerHTML=""
+
+players.forEach((p,i)=>{
+
+const angle=i*(360/players.length)*Math.PI/180
+
+const spot=document.createElement("div")
+spot.className="player"
+
+spot.style.left=(50+35*Math.cos(angle))+"%"
+spot.style.top=(50+35*Math.sin(angle))+"%"
+
+const badge=document.createElement("div")
+
+badge.innerHTML=`${p}${data.readyStatus?.[p]?" ✓":""}<br>${wallets[p]}៛`
+
+spot.appendChild(badge)
+
+const cardDiv=document.createElement("div")
+cardDiv.className="cards"
+
+if(data.players?.[p]){
+
+data.players[p].forEach((c,i)=>{
+
+const img=document.createElement("img")
+
+img.src=(c.faceUp||p===player)?cardImg(c.val):"https://deckofcardsapi.com/static/img/back.png"
+
+if(p===player&&!data.readyStatus?.[p]&&!c.faceUp){
+
+img.onclick=()=>{
+
+if(selected===null) selected=i
+else swap(selected,i)
+
+}
+
+}
+
+cardDiv.appendChild(img)
+
+})
+
+}
+
+spot.appendChild(cardDiv)
+
+table.appendChild(spot)
+
+})
+
+})
+
 }
 
 async function swap(a,b){
-    const pRef=ref(db,`rooms/${room}/players/${player}`)
-    const snap=await get(pRef)
-    let c=snap.val()
-    [c[a],c[b]]=[c[b],c[a]]
-    await set(pRef,c)
-    selected=null
+
+const pRef=ref(db,`rooms/${room}/players/${player}`)
+const snap=await get(pRef)
+
+let c=snap.val()
+
+[c[a],c[b]]=[c[b],c[a]]
+
+await set(pRef,c)
+
+selected=null
+
 }
 
 document.getElementById("dealBtn").onclick=deal
+
 function deal(){
-    const suits=["♠","♥","♦","♣"]
-    const vals=["A","2","3","4","5","6","7","8","9","10","J","Q","K"]
-    let deck=[]
-    suits.forEach(s=>vals.forEach(v=>deck.push(v+s)))
-    deck.sort(()=>Math.random()-0.5)
-    let cards=deck.slice(0,6).map(v=>({val:v,faceUp:false}))
-    set(ref(db,`rooms/${room}/players/${player}`),cards)
-    set(ref(db,`rooms/${room}/readyStatus/${player}`),false)
+
+const suits=["♠","♥","♦","♣"]
+const vals=["A","2","3","4","5","6","7","8","9","10","J","Q","K"]
+
+let deck=[]
+
+suits.forEach(s=>vals.forEach(v=>deck.push(v+s)))
+
+deck.sort(()=>Math.random()-0.5)
+
+let cards=deck.slice(0,6).map(v=>({val:v,faceUp:false}))
+
+set(ref(db,`rooms/${room}/players/${player}`),cards)
+set(ref(db,`rooms/${room}/readyStatus/${player}`),false)
+
 }
 
-readyBtn.onclick=()=>{
-    ready=!ready
-    set(ref(db,`rooms/${room}/readyStatus/${player}`),ready)
-    readyBtn.innerText=ready?translations[lang].unready:translations[lang].ready
+document.getElementById("readyBtn").onclick=()=>{
+
+ready=!ready
+
+set(ref(db,`rooms/${room}/readyStatus/${player}`),ready)
+
+document.getElementById("readyBtn").innerText=ready?"Unready":"Ready"
+
 }
 
-// Reveal
 document.getElementById("revealBtn").onclick=()=>{
-    get(ref(db,`rooms/${room}/players`)).then(snap=>{
-        const d=snap.val()
-        let up={}
-        for(let p in d){
-            d[p].forEach((c,i)=>{
-                up[`rooms/${room}/players/${p}/${i}/faceUp`]=true
-            })
-        }
-        update(ref(db),up)
-    })
+
+get(ref(db,`rooms/${room}/players`)).then(snap=>{
+
+const d=snap.val()
+
+let up={}
+
+for(let p in d){
+
+d[p].forEach((c,i)=>{
+
+up[`rooms/${room}/players/${p}/${i}/faceUp`]=true
+
+})
+
 }
 
-// Reset
+update(ref(db),up)
+
+})
+
+}
+
 document.getElementById("resetBtn").onclick=()=>{
-    set(ref(db,`rooms/${room}/players`),null)
-    set(ref(db,`rooms/${room}/readyStatus`),null)
+
+set(ref(db,`rooms/${room}/players`),null)
+set(ref(db,`rooms/${room}/readyStatus`),null)
+
 }
 
-// Logout (player removed from table)
-document.getElementById("logoutBtn").onclick=async ()=>{
-    await remove(ref(db,`rooms/${room}/players/${player}`))
-    await remove(ref(db,`rooms/${room}/readyStatus/${player}`))
-    document.getElementById("game").style.display="none"
-    document.getElementById("login").style.display="flex"
+document.getElementById("logoutBtn").onclick=()=>{
+
+remove(ref(db,`rooms/${room}/players/${player}`))
+remove(ref(db,`rooms/${room}/readyStatus/${player}`))
+
+document.getElementById("game").style.display="none"
+document.getElementById("login").style.display="flex"
+
 }
 
 function cardImg(v){
-    const suitMap={"♠":"S","♥":"H","♦":"D","♣":"C"}
-    let val=v.replace(/[♠♥♦♣]/g,'')
-    if(val==="10") val="0"
-    return `https://deckofcardsapi.com/static/img/${val}${suitMap[v.slice(-1)]}.png`
+
+const suitMap={"♠":"S","♥":"H","♦":"D","♣":"C"}
+
+let val=v.replace(/[♠♥♦♣]/g,'')
+
+if(val==="10") val="0"
+
+return `https://deckofcardsapi.com/static/img/${val}${suitMap[v.slice(-1)]}.png`
+
 }
 
-// Transfer money example: show in chat
-async function transferMoney(to,amt){
-    if(!to||!amt) return
-    runTransaction(ref(db,`rooms/${room}/wallets/${player}`),c=>(c||0)-amt)
-    runTransaction(ref(db,`rooms/${room}/wallets/${to}`),c=>(c||0)+amt)
-    const notice=`${player} ${translations[lang].transferNotice} ${amt}៛ to ${to}`
-    push(ref(db,`rooms/${room}/chats`),{u:"System",m:notice,t:Date.now()})
-}
 </script>
+
 </body>
 </html>
