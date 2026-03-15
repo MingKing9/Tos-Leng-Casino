@@ -9,7 +9,6 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: -apple-system, 'Kantumruy Pro', sans-serif; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
 
-        /* Top Bar */
         #room-info-bar {
             position: fixed; top: 0; width: 100%; height: 44px; padding-top: env(safe-area-inset-top);
             background: rgba(0,0,0,0.9); display: flex; justify-content: space-between;
@@ -17,7 +16,6 @@
             border-bottom: 1px solid #444; z-index: 1000; color: var(--gold); font-size: 13px;
         }
 
-        /* Logout Button */
         #btn-logout {
             background: #c0392b; color: white; border: none; border-radius: 8px;
             padding: 6px 12px; font-size: 11px; font-weight: bold; cursor: pointer;
@@ -27,17 +25,14 @@
         #game-wrapper { display: flex; flex-direction: column; height: 100dvh; width: 100vw; background: radial-gradient(circle, var(--felt) 0%, #0a2114 100%); }
         #poker-table { flex: 1; position: relative; margin: 60px 10px 10px 10px; border: 8px solid var(--wood); border-radius: 50px; box-shadow: inset 0 0 60px rgba(0,0,0,0.8); }
 
-        /* Players */
         .player-spot { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; width: 120px; }
         .player-badge { background: rgba(0,0,0,0.85); padding: 5px; border-radius: 10px; border: 1px solid var(--gold); font-size: 10px; color: #fff; text-align: center; width: 100%; }
         .is-ready { border-color: #2ecc71; box-shadow: 0 0 10px #2ecc71; }
 
-        /* Cards 2x3 */
         .card-row { display: grid; grid-template-columns: repeat(3, 35px); grid-template-rows: repeat(2, 50px); gap: 4px; margin-top: 5px; }
         .card-img { width: 35px; height: 50px; border-radius: 4px; background: white; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
         .card-img.active { border: 3px solid var(--gold); transform: scale(1.1); z-index: 50; }
 
-        /* Controls */
         .controls-bar { background: #111; border-top: 1px solid #333; display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 8px; padding: 10px 10px calc(var(--safe-bottom) + 10px); }
         .action-group { display: flex; flex-direction: column; gap: 6px; }
         button { padding: 12px 0; border: none; border-radius: 10px; font-weight: bold; font-size: 11px; color: white; cursor: pointer; position: relative; }
@@ -46,19 +41,15 @@
         .btn-green { background: #27ae60; }
         .btn-red { background: #c0392b; }
 
-        /* Chat Notification Dot */
-        #chat-dot { position: absolute; top: 5px; right: 5px; width: 10px; height: 100%; width: 10px; height: 10px; background: var(--red); border-radius: 50%; display: none; border: 1px solid white; }
+        #chat-dot { position: absolute; top: 5px; right: 5px; width: 10px; height: 10px; background: var(--red); border-radius: 50%; display: none; border: 1px solid white; }
 
-        /* Chat Panel */
         #chat-panel { position: fixed; right: -300px; top: 0; width: 280px; height: 100%; background: rgba(10,10,10,0.98); border-left: 2px solid var(--gold); transition: 0.3s; z-index: 2000; display: flex; flex-direction: column; }
         #chat-panel.open { right: 0; }
         #chat-msgs { flex: 1; overflow-y: auto; padding: 15px; color: white; font-size: 13px; }
 
-        /* Login */
         #login-screen, .modal { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .login-input { width: 85%; max-width: 300px; padding: 14px; margin-bottom: 10px; border-radius: 10px; border: 1px solid var(--gold); background: #111; color: white; text-align: center; font-size: 16px; }
 
-        /* Resume Modal */
         #resume-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 99999; display: none; flex-direction: column; align-items: center; justify-content: center; }
         #resume-modal h2 { color: var(--gold); margin-bottom: 16px; text-align: center; padding: 0 20px; }
         #resume-modal p { color: #fff; margin-bottom: 20px; font-size: 15px; text-align: center; }
@@ -81,7 +72,6 @@
     <button onclick="join()" id="btn-start" class="btn-gold" style="width:85%; max-width:300px; font-size:18px;">START</button>
 </div>
 
-<!-- Resume Balance Modal -->
 <div id="resume-modal">
     <h2 id="resume-title">Continue with previous balance?</h2>
     <p id="resume-msg"></p>
@@ -150,10 +140,8 @@
     let room, player, lang;
     let selectedIdx = null;
     let isChatOpen = false;
-
     let unsubscribeGame = null;
     let unsubscribeChat = null;
-
     let pendingMoney = 0;
     let pendingExistingMoney = 0;
 
@@ -210,18 +198,25 @@
 
     window.logout = async function() {
         if (room && player) {
-            const walletSnap = await get(ref(db, `rooms/${room}/wallets/${player}`));
-            const currentBalance = walletSnap.val();
-            if (currentBalance !== null && currentBalance !== undefined) {
-                await set(ref(db, `rooms/${room}/savedBalances/${player}`), currentBalance);
-            }
-            await Promise.all([
-                remove(ref(db, `rooms/${room}/wallets/${player}`)),
-                remove(ref(db, `rooms/${room}/players/${player}`)),
-                remove(ref(db, `rooms/${room}/readyStatus/${player}`))
-            ]);
+            const savedRoom = room;
+            const savedPlayer = player;
+
+            // Save current balance before removing
+            try {
+                const walletSnap = await get(ref(db, `rooms/${savedRoom}/wallets/${savedPlayer}`));
+                const bal = walletSnap.val();
+                if (bal !== null && bal !== undefined) {
+                    await set(ref(db, `rooms/${savedRoom}/savedBalances/${savedPlayer}`), bal);
+                }
+            } catch(e) {}
+
+            // Remove player from the room one by one so other players see them leave instantly
+            try { await remove(ref(db, `rooms/${savedRoom}/wallets/${savedPlayer}`)); } catch(e) {}
+            try { await remove(ref(db, `rooms/${savedRoom}/players/${savedPlayer}`)); } catch(e) {}
+            try { await remove(ref(db, `rooms/${savedRoom}/readyStatus/${savedPlayer}`)); } catch(e) {}
         }
 
+        // Stop listeners AFTER removes so other clients get the real-time deletion
         if (unsubscribeGame) { unsubscribeGame(); unsubscribeGame = null; }
         if (unsubscribeChat) { unsubscribeChat(); unsubscribeChat = null; }
 
