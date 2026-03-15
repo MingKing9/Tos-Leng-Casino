@@ -92,7 +92,7 @@
 <div id="transfer-modal" class="modal" style="display:none;">
     <h2 style="color:var(--gold)" id="txt-trans-title">TRANSFER</h2>
     <select id="transfer-to" class="login-input"></select>
-    <input id="transfer-amount" class="login-input" type="number" placeholder=""> 
+    <input id="transfer-amount" class="login-input" type="number" placeholder="">
     <button onclick="confirmTransfer()" id="btn-send-money" class="btn-green" style="width:85%; margin-bottom:10px;">SEND</button>
     <button onclick="document.getElementById('transfer-modal').style.display='none'" id="btn-cancel-money" class="btn-red" style="width:85%;">CANCEL</button>
 </div>
@@ -136,7 +136,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, update, onValue, get, push, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, set, update, onValue, get, push, runTransaction, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBjsVUxlNjGUnYioHOlKmk1wEMoVTSVxLw",
@@ -151,11 +151,9 @@
     let selectedIdx = null;
     let isChatOpen = false;
 
-    // Store unsubscribe functions so logout can clean them up
     let unsubscribeGame = null;
     let unsubscribeChat = null;
 
-    // Temporary storage used during the resume-balance dialog
     let pendingMoney = 0;
     let pendingExistingMoney = 0;
 
@@ -173,17 +171,14 @@
 
         if (!room || !player) return alert("Please input name/room");
 
-        // Check if player already has a saved balance in this room
-        const existingSnap = await get(ref(db, `rooms/${room}/wallets/${player}`));
+        const existingSnap = await get(ref(db, `rooms/${room}/savedBalances/${player}`));
         const existingMoney = existingSnap.val();
 
         if (existingMoney !== null && existingMoney !== undefined) {
-            // Player has a previous balance — ask what they want to do
             pendingMoney = newMoney;
             pendingExistingMoney = existingMoney;
             showResumeModal();
         } else {
-            // No previous balance — just start normally
             startGame(newMoney);
         }
     };
@@ -206,31 +201,35 @@
 
     function startGame(money) {
         set(ref(db, `rooms/${room}/wallets/${player}`), money);
+        remove(ref(db, `rooms/${room}/savedBalances/${player}`));
         document.getElementById("login-screen").style.display = "none";
         applyTranslations();
         listen();
         listenChat();
     }
 
-    window.logout = function() {
-        // Unsubscribe from Firebase listeners
+    window.logout = async function() {
+        if (room && player) {
+            const walletSnap = await get(ref(db, `rooms/${room}/wallets/${player}`));
+            const currentBalance = walletSnap.val();
+            if (currentBalance !== null && currentBalance !== undefined) {
+                await set(ref(db, `rooms/${room}/savedBalances/${player}`), currentBalance);
+            }
+            await Promise.all([
+                remove(ref(db, `rooms/${room}/wallets/${player}`)),
+                remove(ref(db, `rooms/${room}/players/${player}`)),
+                remove(ref(db, `rooms/${room}/readyStatus/${player}`))
+            ]);
+        }
+
         if (unsubscribeGame) { unsubscribeGame(); unsubscribeGame = null; }
         if (unsubscribeChat) { unsubscribeChat(); unsubscribeChat = null; }
 
-        // Reset state
-        room = null;
-        player = null;
-        lang = null;
-        selectedIdx = null;
-        isChatOpen = false;
+        room = null; player = null; lang = null;
+        selectedIdx = null; isChatOpen = false;
 
-        // Close chat panel if open
         document.getElementById("chat-panel").classList.remove("open");
-
-        // Clear poker table
         document.getElementById("poker-table").innerHTML = "";
-
-        // Show login screen
         document.getElementById("login-screen").style.display = "flex";
     };
 
