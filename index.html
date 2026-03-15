@@ -15,24 +15,19 @@
             align-items: center; padding-left: 20px; padding-right: 10px;
             border-bottom: 1px solid #444; z-index: 1000; color: var(--gold); font-size: 13px;
         }
-
         #btn-logout {
             background: #c0392b; color: white; border: none; border-radius: 8px;
             padding: 6px 12px; font-size: 11px; font-weight: bold; cursor: pointer;
             white-space: nowrap; flex-shrink: 0;
         }
-
         #game-wrapper { display: flex; flex-direction: column; height: 100dvh; width: 100vw; background: radial-gradient(circle, var(--felt) 0%, #0a2114 100%); }
         #poker-table { flex: 1; position: relative; margin: 60px 10px 10px 10px; border: 8px solid var(--wood); border-radius: 50px; box-shadow: inset 0 0 60px rgba(0,0,0,0.8); }
-
         .player-spot { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; width: 120px; }
         .player-badge { background: rgba(0,0,0,0.85); padding: 5px; border-radius: 10px; border: 1px solid var(--gold); font-size: 10px; color: #fff; text-align: center; width: 100%; }
         .is-ready { border-color: #2ecc71; box-shadow: 0 0 10px #2ecc71; }
-
         .card-row { display: grid; grid-template-columns: repeat(3, 35px); grid-template-rows: repeat(2, 50px); gap: 4px; margin-top: 5px; }
         .card-img { width: 35px; height: 50px; border-radius: 4px; background: white; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
         .card-img.active { border: 3px solid var(--gold); transform: scale(1.1); z-index: 50; }
-
         .controls-bar { background: #111; border-top: 1px solid #333; display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 8px; padding: 10px 10px calc(var(--safe-bottom) + 10px); }
         .action-group { display: flex; flex-direction: column; gap: 6px; }
         button { padding: 12px 0; border: none; border-radius: 10px; font-weight: bold; font-size: 11px; color: white; cursor: pointer; position: relative; }
@@ -40,16 +35,12 @@
         .btn-blue { background: #2980b9; }
         .btn-green { background: #27ae60; }
         .btn-red { background: #c0392b; }
-
         #chat-dot { position: absolute; top: 5px; right: 5px; width: 10px; height: 10px; background: var(--red); border-radius: 50%; display: none; border: 1px solid white; }
-
         #chat-panel { position: fixed; right: -300px; top: 0; width: 280px; height: 100%; background: rgba(10,10,10,0.98); border-left: 2px solid var(--gold); transition: 0.3s; z-index: 2000; display: flex; flex-direction: column; }
         #chat-panel.open { right: 0; }
         #chat-msgs { flex: 1; overflow-y: auto; padding: 15px; color: white; font-size: 13px; }
-
         #login-screen, .modal { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .login-input { width: 85%; max-width: 300px; padding: 14px; margin-bottom: 10px; border-radius: 10px; border: 1px solid var(--gold); background: #111; color: white; text-align: center; font-size: 16px; }
-
         #resume-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 99999; display: none; flex-direction: column; align-items: center; justify-content: center; }
         #resume-modal h2 { color: var(--gold); margin-bottom: 16px; text-align: center; padding: 0 20px; }
         #resume-modal p { color: #fff; margin-bottom: 20px; font-size: 15px; text-align: center; }
@@ -159,10 +150,12 @@
 
         if (!room || !player) return alert("Please input name/room");
 
-        const existingSnap = await get(ref(db, `rooms/${room}/savedBalances/${player}`));
-        const existingMoney = existingSnap.val();
+        // Check localStorage for a saved balance from a previous session
+        const savedKey = `tosleng_${room}_${player.toLowerCase()}`;
+        const savedRaw = localStorage.getItem(savedKey);
+        const existingMoney = savedRaw !== null ? parseInt(savedRaw) : null;
 
-        if (existingMoney !== null && existingMoney !== undefined) {
+        if (existingMoney !== null && !isNaN(existingMoney)) {
             pendingMoney = newMoney;
             pendingExistingMoney = existingMoney;
             showResumeModal();
@@ -189,7 +182,7 @@
 
     function startGame(money) {
         set(ref(db, `rooms/${room}/wallets/${player}`), money);
-        remove(ref(db, `rooms/${room}/savedBalances/${player}`));
+        localStorage.removeItem(`tosleng_${room}_${player.toLowerCase()}`);
         document.getElementById("login-screen").style.display = "none";
         applyTranslations();
         listen();
@@ -201,22 +194,22 @@
             const savedRoom = room;
             const savedPlayer = player;
 
-            // Save current balance before removing
+            // Save current balance to localStorage before removing from Firebase
             try {
                 const walletSnap = await get(ref(db, `rooms/${savedRoom}/wallets/${savedPlayer}`));
                 const bal = walletSnap.val();
                 if (bal !== null && bal !== undefined) {
-                    await set(ref(db, `rooms/${savedRoom}/savedBalances/${savedPlayer}`), bal);
+                    localStorage.setItem(`tosleng_${savedRoom}_${savedPlayer.toLowerCase()}`, bal);
                 }
             } catch(e) {}
 
-            // Remove player from the room one by one so other players see them leave instantly
+            // Remove player from all active Firebase keys so others see them leave
             try { await remove(ref(db, `rooms/${savedRoom}/wallets/${savedPlayer}`)); } catch(e) {}
             try { await remove(ref(db, `rooms/${savedRoom}/players/${savedPlayer}`)); } catch(e) {}
             try { await remove(ref(db, `rooms/${savedRoom}/readyStatus/${savedPlayer}`)); } catch(e) {}
         }
 
-        // Stop listeners AFTER removes so other clients get the real-time deletion
+        // Stop listening AFTER the removes so other clients get the real-time update
         if (unsubscribeGame) { unsubscribeGame(); unsubscribeGame = null; }
         if (unsubscribeChat) { unsubscribeChat(); unsubscribeChat = null; }
 
