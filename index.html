@@ -13,8 +13,15 @@
         #room-info-bar {
             position: fixed; top: 0; width: 100%; height: 44px; padding-top: env(safe-area-inset-top);
             background: rgba(0,0,0,0.9); display: flex; justify-content: space-between;
-            align-items: center; padding-left: 20px; padding-right: 20px;
+            align-items: center; padding-left: 20px; padding-right: 10px;
             border-bottom: 1px solid #444; z-index: 1000; color: var(--gold); font-size: 13px;
+        }
+
+        /* Logout Button */
+        #btn-logout {
+            background: #c0392b; color: white; border: none; border-radius: 8px;
+            padding: 6px 12px; font-size: 11px; font-weight: bold; cursor: pointer;
+            white-space: nowrap; flex-shrink: 0;
         }
 
         #game-wrapper { display: flex; flex-direction: column; height: 100dvh; width: 100vw; background: radial-gradient(circle, var(--felt) 0%, #0a2114 100%); }
@@ -50,6 +57,12 @@
         /* Login */
         #login-screen, .modal { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .login-input { width: 85%; max-width: 300px; padding: 14px; margin-bottom: 10px; border-radius: 10px; border: 1px solid var(--gold); background: #111; color: white; text-align: center; font-size: 16px; }
+
+        /* Resume Modal */
+        #resume-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 99999; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        #resume-modal h2 { color: var(--gold); margin-bottom: 16px; text-align: center; padding: 0 20px; }
+        #resume-modal p { color: #fff; margin-bottom: 20px; font-size: 15px; text-align: center; }
+        #resume-modal .resume-btn { width: 85%; max-width: 300px; margin-bottom: 10px; font-size: 15px; padding: 14px; }
     </style>
 </head>
 <body>
@@ -68,6 +81,14 @@
     <button onclick="join()" id="btn-start" class="btn-gold" style="width:85%; max-width:300px; font-size:18px;">START</button>
 </div>
 
+<!-- Resume Balance Modal -->
+<div id="resume-modal">
+    <h2 id="resume-title">Continue with previous balance?</h2>
+    <p id="resume-msg"></p>
+    <button id="resume-keep-btn" class="resume-btn btn-green" onclick="resumeChoice(true)">✅ Keep Previous</button>
+    <button id="resume-new-btn" class="resume-btn btn-red" onclick="resumeChoice(false)">🔄 Start Fresh</button>
+</div>
+
 <div id="transfer-modal" class="modal" style="display:none;">
     <h2 style="color:var(--gold)" id="txt-trans-title">TRANSFER</h2>
     <select id="transfer-to" class="login-input"></select>
@@ -76,58 +97,10 @@
     <button onclick="document.getElementById('transfer-modal').style.display='none'" id="btn-cancel-money" class="btn-red" style="width:85%;">CANCEL</button>
 </div>
 
-<script type="module">
-    // ... (keep your firebase init code)
-
-    const dictionary = {
-        kh: { 
-            start: "ចូលលេង", table: "តុ", player: "អ្នកលេង", money: "ប្រាក់", 
-            chat: "ឆាត", deal: "ចែកបៀ", ready: "រួចរាល់", unready: "មិនទាន់រួចរាល់", 
-            reveal: "បើកបៀ", reset: "លេងថ្មី", trans: "ផ្ទេរប្រាក់", send: "បញ្ជូន", 
-            cancel: "បោះបង់", chatT: "ការពិភាក្សា", amtPh: "ចំនួនទឹកប្រាក់" 
-        },
-        en: { 
-            start: "START", table: "TABLE", player: "PLAYER", money: "MONEY", 
-            chat: "CHAT", deal: "DEAL", ready: "READY", unready: "UNREADY", 
-            reveal: "REVEAL", reset: "RESET", trans: "TRANSFER", send: "SEND", 
-            cancel: "CANCEL", chatT: "CHAT", amtPh: "Amount" 
-        },
-        cn: { 
-            start: "开始", table: "桌号", player: "玩家", money: "钱包", 
-            chat: "聊天", deal: "发牌", ready: "准备", unready: "未准备", 
-            reveal: "开牌", reset: "重置", trans: "转账", send: "发送", 
-            cancel: "取消", chatT: "聊天", amtPh: "金额" 
-        }
-    };
-
-    function applyTranslations() {
-        const d = dictionary[lang];
-        // Main UI
-        document.getElementById("btn-start").innerText = d.start;
-        document.getElementById("display-room").innerText = `${d.table}: ${room.toUpperCase()}`;
-        document.getElementById("display-name").innerText = `${d.player}: ${player.toUpperCase()}`;
-        document.getElementById("btn-money-ui").innerText = d.money;
-        document.getElementById("btn-chat-ui").innerHTML = `${d.chat} <div id="chat-dot"></div>`;
-        document.getElementById("dealBtn").innerText = d.deal;
-        document.getElementById("readyBtn").innerText = d.ready;
-        document.getElementById("notReadyBtn").innerText = d.unready;
-        document.getElementById("btn-reveal-ui").innerText = d.reveal;
-        document.getElementById("btn-reset-ui").innerText = d.reset;
-        
-        // Modal UI
-        document.getElementById("txt-trans-title").innerText = d.trans;
-        document.getElementById("transfer-amount").placeholder = d.amtPh;
-        document.getElementById("btn-send-money").innerText = d.send;
-        document.getElementById("btn-cancel-money").innerText = d.cancel;
-        document.getElementById("txt-chat-title").innerText = d.chatT;
-    }
-    
-    // ... (rest of your functions)
-</script>
-
 <div id="room-info-bar">
     <span id="display-room">តុ: -</span>
     <span id="display-name">អ្នកលេង: -</span>
+    <button id="btn-logout" onclick="logout()">LOG OUT</button>
 </div>
 
 <div id="game-wrapper">
@@ -178,26 +151,87 @@
     let selectedIdx = null;
     let isChatOpen = false;
 
+    // Store unsubscribe functions so logout can clean them up
+    let unsubscribeGame = null;
+    let unsubscribeChat = null;
+
+    // Temporary storage used during the resume-balance dialog
+    let pendingMoney = 0;
+    let pendingExistingMoney = 0;
+
     const dictionary = {
-        kh: { start: "ចូលលេង", table: "តុ", player: "អ្នកលេង", money: "ប្រាក់", chat: "ឆាត", deal: "ចែកបៀ", ready: "រួចរាល់", unready: "មិនទាន់រួចរាល់", reveal: "បើកបៀ", reset: "លេងម្តងទៀត", trans: "ផ្ទេរប្រាក់", send: "បញ្ជូន", cancel: "បោះបង់", chatT: "ការពិភាក្សា" },
-        en: { start: "START", table: "TABLE", player: "PLAYER", money: "MONEY", chat: "CHAT", deal: "DEAL", ready: "READY", unready: "UNREADY", reveal: "REVEAL", reset: "RESET", trans: "TRANSFER", send: "SEND", cancel: "CANCEL", chatT: "CHAT" },
-        cn: { start: "开始", table: "桌号", player: "玩家", money: "钱包", chat: "聊天", deal: "发牌", ready: "准备", unready: "未准备", reveal: "开牌", reset: "重置", trans: "转账", send: "发送", cancel: "取消", chatT: "聊天" }
+        kh: { start: "ចូលលេង", table: "តុ", player: "អ្នកលេង", money: "ប្រាក់", chat: "ឆាត", deal: "ចែកបៀ", ready: "រួចរាល់", unready: "មិនទាន់រួចរាល់", reveal: "បើកបៀ", reset: "លេងម្តងទៀត", trans: "ផ្ទេរប្រាក់", send: "បញ្ជូន", cancel: "បោះបង់", chatT: "ការពិភាក្សា", logout: "ចាកចេញ", resumeTitle: "បន្តជាមួយប្រាក់មុន?", resumeKeep: "✅ រក្សាប្រាក់មុន", resumeNew: "🔄 ចាប់ផ្តើមថ្មី" },
+        en: { start: "START", table: "TABLE", player: "PLAYER", money: "MONEY", chat: "CHAT", deal: "DEAL", ready: "READY", unready: "UNREADY", reveal: "REVEAL", reset: "RESET", trans: "TRANSFER", send: "SEND", cancel: "CANCEL", chatT: "CHAT", logout: "LOG OUT", resumeTitle: "Continue with previous balance?", resumeKeep: "✅ Keep Previous", resumeNew: "🔄 Start Fresh" },
+        cn: { start: "开始", table: "桌号", player: "玩家", money: "钱包", chat: "聊天", deal: "发牌", ready: "准备", unready: "未准备", reveal: "开牌", reset: "重置", trans: "转账", send: "发送", cancel: "取消", chatT: "聊天", logout: "退出", resumeTitle: "继续使用之前的余额?", resumeKeep: "✅ 保留余额", resumeNew: "🔄 重新开始" }
     };
 
-    window.join = function() {
+    window.join = async function() {
         room = document.getElementById("roomInput").value.trim().toLowerCase();
         player = document.getElementById("nameInput").value.trim();
         lang = document.getElementById("langSelect").value;
-        const money = parseInt(document.getElementById("moneyInput").value) || 50000;
-        
-        if(!room || !player) return alert("Please input name/room");
+        const newMoney = parseInt(document.getElementById("moneyInput").value) || 50000;
 
+        if (!room || !player) return alert("Please input name/room");
+
+        // Check if player already has a saved balance in this room
+        const existingSnap = await get(ref(db, `rooms/${room}/wallets/${player}`));
+        const existingMoney = existingSnap.val();
+
+        if (existingMoney !== null && existingMoney !== undefined) {
+            // Player has a previous balance — ask what they want to do
+            pendingMoney = newMoney;
+            pendingExistingMoney = existingMoney;
+            showResumeModal();
+        } else {
+            // No previous balance — just start normally
+            startGame(newMoney);
+        }
+    };
+
+    function showResumeModal() {
+        const d = dictionary[lang] || dictionary.en;
+        document.getElementById("resume-title").innerText = d.resumeTitle;
+        document.getElementById("resume-msg").innerText =
+            `${pendingExistingMoney.toLocaleString()}៛  →  ${pendingMoney.toLocaleString()}៛`;
+        document.getElementById("resume-keep-btn").innerText = `${d.resumeKeep}  (${pendingExistingMoney.toLocaleString()}៛)`;
+        document.getElementById("resume-new-btn").innerText = `${d.resumeNew}  (${pendingMoney.toLocaleString()}៛)`;
+        document.getElementById("resume-modal").style.display = "flex";
+    }
+
+    window.resumeChoice = function(keepPrevious) {
+        document.getElementById("resume-modal").style.display = "none";
+        const moneyToUse = keepPrevious ? pendingExistingMoney : pendingMoney;
+        startGame(moneyToUse);
+    };
+
+    function startGame(money) {
         set(ref(db, `rooms/${room}/wallets/${player}`), money);
         document.getElementById("login-screen").style.display = "none";
-        
         applyTranslations();
         listen();
         listenChat();
+    }
+
+    window.logout = function() {
+        // Unsubscribe from Firebase listeners
+        if (unsubscribeGame) { unsubscribeGame(); unsubscribeGame = null; }
+        if (unsubscribeChat) { unsubscribeChat(); unsubscribeChat = null; }
+
+        // Reset state
+        room = null;
+        player = null;
+        lang = null;
+        selectedIdx = null;
+        isChatOpen = false;
+
+        // Close chat panel if open
+        document.getElementById("chat-panel").classList.remove("open");
+
+        // Clear poker table
+        document.getElementById("poker-table").innerHTML = "";
+
+        // Show login screen
+        document.getElementById("login-screen").style.display = "flex";
     };
 
     function applyTranslations() {
@@ -215,14 +249,15 @@
         document.getElementById("btn-send-money").innerText = d.send;
         document.getElementById("btn-cancel-money").innerText = d.cancel;
         document.getElementById("txt-chat-title").innerText = d.chatT;
+        document.getElementById("btn-logout").innerText = d.logout;
     }
 
     function listen() {
-        onValue(ref(db, `rooms/${room}`), snap => {
+        unsubscribeGame = onValue(ref(db, `rooms/${room}`), snap => {
             const data = snap.val() || {};
             const table = document.getElementById("poker-table");
             table.innerHTML = "";
-            
+
             const wallets = data.wallets || {};
             const players = Object.keys(wallets);
             const myCards = (data.players && data.players[player]) ? data.players[player] : null;
@@ -244,7 +279,7 @@
                 badge.className = "player-badge" + (isPReady ? " is-ready" : "");
                 badge.innerHTML = `<b>${p === player ? "YOU" : p} ${isPReady ? "✅" : ""}</b><br>
                                    <span style="color:#2ecc71">${(wallets[p]||0).toLocaleString()}៛</span>`;
-                
+
                 const cardsDiv = document.createElement("div");
                 cardsDiv.className = "card-row";
                 if (data.players && data.players[p]) {
@@ -284,8 +319,8 @@
         inp.value = "";
     };
 
-function listenChat() {
-        onValue(ref(db, `rooms/${room}/chats`), snap => {
+    function listenChat() {
+        unsubscribeChat = onValue(ref(db, `rooms/${room}/chats`), snap => {
             const area = document.getElementById("chat-msgs");
             area.innerHTML = "";
             const data = snap.val();
@@ -293,9 +328,7 @@ function listenChat() {
                 Object.values(data).sort((a,b) => a.t - b.t).forEach(c => {
                     let d = document.createElement("div");
                     d.style.marginBottom = "8px";
-                    
                     if (c.u === "SYSTEM") {
-                        // This displays "SYSTEM:" in gold, followed by your message with the emoji
                         d.innerHTML = `<span style="color:var(--gold); font-weight:bold;">SYSTEM:</span> <span style="color:#fff;">${c.m}</span>`;
                     } else {
                         d.innerHTML = `<span style="color:var(--gold); font-weight:bold;">${c.u}:</span> <span style="color:#fff;">${c.m}</span>`;
@@ -320,25 +353,22 @@ function listenChat() {
         });
     };
 
-window.confirmTransfer = () => {
+    window.confirmTransfer = () => {
         const to = document.getElementById("transfer-to").value;
         const amtInput = document.getElementById("transfer-amount");
         const amt = parseInt(amtInput.value);
-        
+
         if(!to || !amt || isNaN(amt)) return;
 
-        // Perform the money transactions
         runTransaction(ref(db, `rooms/${room}/wallets/${player}`), c => (c || 0) - amt);
         runTransaction(ref(db, `rooms/${room}/wallets/${to}`), c => (c || 0) + amt);
 
-        // Push the transaction log to Firebase
-        push(ref(db, `rooms/${room}/chats`), { 
-            u: "SYSTEM", 
-            m: `💸 ${player} SENT ${amt.toLocaleString()}៛ TO ${to}`, 
-            t: Date.now() 
+        push(ref(db, `rooms/${room}/chats`), {
+            u: "SYSTEM",
+            m: `💸 ${player} SENT ${amt.toLocaleString()}៛ TO ${to}`,
+            t: Date.now()
         });
 
-        // Close the modal and clear the input
         amtInput.value = "";
         document.getElementById("transfer-modal").style.display = "none";
     };
